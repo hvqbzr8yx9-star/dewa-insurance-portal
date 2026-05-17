@@ -1,0 +1,1586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DEWA — Insurance Administration</title>
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', 'Segoe UI', Tahoma, sans-serif;
+      background: #f2f3f5;
+      color: #1a1a2e;
+      min-height: 100vh;
+    }
+
+    /* ── TOP GOV BAR ── */
+    .gov-bar {
+      background: linear-gradient(135deg, #111 0%, #2a2a2a 50%, #111 100%);
+      padding: 10px 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .gov-left {
+      display: flex; align-items: center; gap: 14px;
+    }
+    /* Government of Dubai SVG crest placeholder */
+    .gov-crest {
+      display: flex; align-items: center; gap: 10px;
+    }
+    .gov-crest-icon {
+      width: 44px; height: 44px;
+      border: 1.5px solid rgba(255,255,255,0.5);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      overflow: hidden;
+      background: transparent;
+    }
+    .gov-crest-icon svg { width: 32px; height: 32px; }
+    .gov-crest-text { color: rgba(255,255,255,0.9); }
+    .gov-crest-text .ar { font-size: 11px; letter-spacing: 0.5px; }
+    .gov-crest-text .en { font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase; opacity: 0.7; }
+
+    .gov-divider {
+      width: 1px; height: 36px;
+      background: rgba(255,255,255,0.2);
+      margin: 0 4px;
+    }
+
+    .gov-right {
+      display: flex; align-items: center; gap: 14px;
+    }
+    .dewa-brand { display: flex; align-items: center; gap: 12px; }
+    .dewa-brand-text { text-align: right; color: rgba(255,255,255,0.9); }
+    .dewa-brand-text .ar { font-size: 13px; letter-spacing: 0.3px; }
+    .dewa-brand-text .en { font-size: 9px; letter-spacing: 1px; text-transform: uppercase; opacity: 0.7; }
+    .dewa-circle {
+      width: 42px; height: 42px;
+      border: 2px solid rgba(255,255,255,0.6);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      position: relative;
+    }
+    .dewa-circle-inner {
+      width: 28px; height: 28px;
+      border: 1.5px solid rgba(255,255,255,0.4);
+      border-radius: 50%;
+    }
+    .dewa-circle::after {
+      content: '';
+      position: absolute;
+      width: 6px; height: 20px;
+      background: rgba(255,255,255,0.7);
+      border-radius: 3px;
+      top: 50%; transform: translateY(-50%);
+    }
+
+    /* ── NAV BAR ── */
+    .nav-bar {
+      background: linear-gradient(180deg, #1c1c1c 0%, #2c2c2c 100%);
+      padding: 0 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+    }
+    .nav-left { display: flex; align-items: center; gap: 0; }
+    .hamburger {
+      display: flex; flex-direction: column; gap: 4px;
+      padding: 16px 20px 16px 0; cursor: pointer;
+    }
+    .hamburger span {
+      width: 22px; height: 2px; background: rgba(255,255,255,0.8); display: block;
+    }
+    .nav-links { display: flex; align-items: center; }
+    .nav-link {
+      color: rgba(255,255,255,0.85);
+      font-size: 13px; font-weight: 500;
+      padding: 16px 20px;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+      letter-spacing: 0.2px;
+      border-bottom: 3px solid transparent;
+    }
+    .nav-link:hover { color: white; }
+    .nav-link.active {
+      color: white;
+      border-bottom-color: white;
+    }
+    .nav-right { display: flex; align-items: center; gap: 6px; }
+    .nav-icon-btn {
+      width: 36px; height: 36px;
+      border-radius: 50%; border: none;
+      background: rgba(255,255,255,0.08);
+      color: rgba(255,255,255,0.8);
+      cursor: pointer; font-size: 15px;
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.2s;
+    }
+    .nav-icon-btn:hover { background: rgba(255,255,255,0.16); }
+    .nav-ar {
+      color: rgba(255,255,255,0.8); font-size: 12px; font-weight: 500;
+      padding: 6px 12px; cursor: pointer;
+      letter-spacing: 0.3px;
+    }
+    .nav-signin {
+      display: flex; align-items: center; gap: 6px;
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.3);
+      border-radius: 4px;
+      color: rgba(255,255,255,0.9);
+      font-size: 12px; font-weight: 500;
+      padding: 7px 14px; cursor: pointer;
+      transition: all 0.2s;
+      letter-spacing: 0.3px;
+    }
+    .nav-signin:hover { background: rgba(255,255,255,0.1); }
+
+    /* ── PAGE TITLE BANNER ── */
+    .page-banner {
+      background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 60%, #1a1a1a 100%);
+      padding: 22px 40px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .page-banner h2 {
+      color: white; font-size: 18px; font-weight: 600; letter-spacing: 0.3px;
+    }
+    .page-banner p {
+      color: rgba(255,255,255,0.5); font-size: 12px; margin-top: 3px; letter-spacing: 0.3px;
+    }
+
+    /* ── TAB STRIP ── */
+    .tab-strip {
+      background: white;
+      border-bottom: 1px solid #e4e6ea;
+      padding: 0 40px;
+      display: flex;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+    .tab-btn {
+      padding: 14px 22px;
+      cursor: pointer; font-size: 13px; font-weight: 500;
+      color: #6b7280; border-bottom: 3px solid transparent;
+      transition: all 0.2s; display: flex; align-items: center; gap: 7px;
+      white-space: nowrap;
+    }
+    .tab-btn:hover { color: #1a1a1a; }
+    .tab-btn.active { color: #1a1a1a; border-bottom-color: #1a1a1a; font-weight: 600; }
+
+    /* ── CONTENT ── */
+    .container { padding: 28px 40px; max-width: 1380px; margin: 0 auto; }
+
+    .card {
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.07), 0 0 0 1px rgba(0,0,0,0.04);
+      padding: 24px;
+      margin-bottom: 20px;
+    }
+    .card-title {
+      font-size: 14px; font-weight: 700; color: #1a1a1a;
+      margin-bottom: 18px; display: flex; align-items: center; gap: 8px;
+      padding-bottom: 14px; border-bottom: 1px solid #f0f0f0;
+    }
+    .card-title .title-icon {
+      width: 28px; height: 28px; border-radius: 6px;
+      background: #1a1a1a; color: white;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px;
+    }
+
+    .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 16px; }
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    .form-group label {
+      font-size: 11px; font-weight: 600; color: #6b7280;
+      text-transform: uppercase; letter-spacing: 0.6px;
+    }
+    .form-group input, .form-group select, .form-group textarea {
+      border: 1.5px solid #e5e7eb; border-radius: 6px;
+      padding: 9px 12px; font-size: 13px; color: #1a1a1a;
+      transition: all 0.18s; background: #fafafa;
+      font-family: inherit;
+    }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+      outline: none; border-color: #1a1a1a; background: white;
+      box-shadow: 0 0 0 3px rgba(26,26,26,0.08);
+    }
+    .form-group textarea { resize: vertical; min-height: 80px; }
+
+    .btn {
+      padding: 9px 18px; border-radius: 6px; border: none;
+      cursor: pointer; font-size: 13px; font-weight: 600;
+      transition: all 0.18s; display: inline-flex; align-items: center; gap: 6px;
+      font-family: inherit; letter-spacing: 0.2px;
+    }
+    .btn-primary { background: #1a1a1a; color: white; }
+    .btn-primary:hover { background: #333; }
+    .btn-success { background: #166534; color: white; }
+    .btn-success:hover { background: #15803d; }
+    .btn-gold { background: #b45309; color: white; }
+    .btn-gold:hover { background: #d97706; }
+    .btn-danger { background: #991b1b; color: white; }
+    .btn-danger:hover { background: #b91c1c; }
+    .btn-outline { background: transparent; color: #1a1a1a; border: 1.5px solid #d1d5db; }
+    .btn-outline:hover { background: #f9fafb; border-color: #1a1a1a; }
+    .btn-sm { padding: 5px 12px; font-size: 12px; }
+    .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th {
+      background: #1a1a1a; color: white;
+      padding: 11px 14px; text-align: left;
+      font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.7px;
+    }
+    th:first-child { border-radius: 6px 0 0 0; }
+    th:last-child { border-radius: 0 6px 0 0; }
+    td { padding: 11px 14px; border-bottom: 1px solid #f3f4f6; vertical-align: middle; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #fafafa; }
+    .table-wrap { overflow-x: auto; border-radius: 8px; border: 1px solid #e5e7eb; }
+
+    .badge {
+      display: inline-block; padding: 3px 9px; border-radius: 10px;
+      font-size: 11px; font-weight: 700; letter-spacing: 0.2px;
+    }
+    .badge-green { background: #dcfce7; color: #166534; }
+    .badge-red { background: #fee2e2; color: #991b1b; }
+    .badge-yellow { background: #fef9c3; color: #854d0e; }
+    .badge-blue { background: #dbeafe; color: #1e40af; }
+    .badge-gray { background: #f3f4f6; color: #4b5563; }
+    .badge-dark { background: #1a1a1a; color: white; }
+
+    .alert {
+      padding: 12px 16px; border-radius: 6px; font-size: 13px;
+      margin-bottom: 16px; display: flex; align-items: flex-start; gap: 10px;
+      line-height: 1.5;
+    }
+    .alert-info { background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; }
+    .alert-success { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
+    .alert-warning { background: #fffbeb; color: #92400e; border: 1px solid #fde68a; }
+    .alert-error { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+
+    .flex { display: flex; }
+    .flex-between { display: flex; justify-content: space-between; align-items: center; }
+    .flex-end { display: flex; justify-content: flex-end; }
+    .gap-8 { gap: 8px; }
+    .gap-12 { gap: 12px; }
+    .mt-16 { margin-top: 16px; }
+    .mt-12 { margin-top: 12px; }
+    .mb-16 { margin-bottom: 16px; }
+
+    .policy-card {
+      border: 1.5px solid #e5e7eb; border-radius: 8px; padding: 16px;
+      cursor: pointer; transition: all 0.2s; position: relative;
+      background: white;
+    }
+    .policy-card:hover { border-color: #1a1a1a; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    .policy-card.selected { border-color: #1a1a1a; background: #f9fafb; box-shadow: 0 0 0 3px rgba(26,26,26,0.08); }
+    .policy-card .policy-type { font-weight: 700; font-size: 13px; color: #1a1a1a; margin-top: 6px; }
+    .policy-card .policy-meta { font-size: 11px; color: #6b7280; margin-top: 3px; }
+    .policy-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 12px; }
+
+    .step-indicator { display: flex; align-items: center; gap: 0; margin-bottom: 24px; }
+    .step { display: flex; align-items: center; gap: 8px; }
+    .step-num {
+      width: 26px; height: 26px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 700; flex-shrink: 0;
+    }
+    .step-num.done { background: #1a1a1a; color: white; }
+    .step-num.active { background: #b45309; color: white; }
+    .step-num.pending { background: #f3f4f6; color: #9ca3af; border: 1.5px solid #e5e7eb; }
+    .step-label { font-size: 12px; font-weight: 600; white-space: nowrap; }
+    .step-label.active { color: #1a1a1a; }
+    .step-label.done { color: #4b5563; }
+    .step-label.pending { color: #9ca3af; }
+    .step-divider { flex: 1; height: 1.5px; background: #e5e7eb; min-width: 16px; }
+    .step-divider.done { background: #1a1a1a; }
+
+    .upload-zone {
+      border: 2px dashed #d1d5db; border-radius: 8px; padding: 32px;
+      text-align: center; cursor: pointer; transition: all 0.2s; background: #fafafa;
+    }
+    .upload-zone:hover, .upload-zone.dragover {
+      border-color: #1a1a1a; background: #f3f4f6;
+    }
+    .upload-zone .upload-icon { font-size: 32px; margin-bottom: 8px; }
+    .upload-zone p { color: #6b7280; font-size: 13px; line-height: 1.6; }
+    .upload-zone strong { color: #1a1a1a; }
+
+    /* ── Inline field validation ── */
+    .field-error {
+      font-size: 11.5px; color: #991b1b; margin-top: 5px;
+      display: flex; align-items: flex-start; gap: 5px; line-height: 1.4;
+    }
+    .field-error::before { content: '⚠'; flex-shrink: 0; }
+    .field-ok {
+      font-size: 11.5px; color: #166534; margin-top: 5px;
+      display: flex; align-items: center; gap: 5px;
+    }
+    .field-ok::before { content: '✓'; }
+    .input-error {
+      border-color: #fca5a5 !important;
+      background: #fff7f7 !important;
+      box-shadow: 0 0 0 3px rgba(239,68,68,0.10) !important;
+    }
+    .input-ok {
+      border-color: #86efac !important;
+      background: #f0fdf4 !important;
+      box-shadow: 0 0 0 3px rgba(34,197,94,0.10) !important;
+    }
+    .compliance-banner {
+      border-radius: 8px; padding: 14px 16px; margin-bottom: 16px;
+      display: flex; align-items: flex-start; gap: 12px; font-size: 13px;
+    }
+    .compliance-banner.pass { background: #f0fdf4; border: 1.5px solid #86efac; color: #166534; }
+    .compliance-banner.fail { background: #fef2f2; border: 1.5px solid #fca5a5; color: #991b1b; }
+    .compliance-banner.partial { background: #fffbeb; border: 1.5px solid #fde68a; color: #854d0e; }
+    .compliance-banner .cb-icon { font-size: 20px; flex-shrink: 0; margin-top: 1px; }
+    .compliance-banner ul { margin: 6px 0 0 16px; padding: 0; }
+    .compliance-banner ul li { margin-bottom: 3px; }
+
+    .file-chip {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: #f3f4f6; border: 1px solid #e5e7eb;
+      border-radius: 4px; padding: 4px 10px;
+      font-size: 12px; color: #374151;
+    }
+    .file-chip button { background: none; border: none; cursor: pointer; color: #991b1b; font-size: 14px; line-height: 1; }
+
+    .req-box {
+      background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px;
+      padding: 16px; margin-bottom: 16px;
+    }
+    .req-box-title { font-size: 12px; font-weight: 700; color: #1a1a1a; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+    .val-row {
+      border: 1.5px solid #e5e7eb; border-radius: 8px; padding: 16px; margin-bottom: 12px;
+      transition: border-color 0.2s;
+    }
+    .val-row.compliant { border-color: #bbf7d0; background: #f0fdf4; }
+    .val-row.non-compliant { border-color: #fecaca; background: #fef2f2; }
+    .val-row.missing { border-color: #fde68a; background: #fffbeb; }
+
+    .check-row { display: flex; align-items: center; gap: 10px; padding: 6px 0; border-bottom: 1px solid rgba(0,0,0,0.04); }
+
+    input[type="file"] { display: none; }
+    .required::after { content: ' *'; color: #991b1b; }
+
+    .empty-state { text-align: center; padding: 48px 24px; color: #9ca3af; }
+    .empty-state .icon { font-size: 40px; margin-bottom: 12px; }
+    .empty-state p { font-size: 13px; line-height: 1.6; }
+
+    /* Stats bar */
+    .stats-bar {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 20px;
+    }
+    .stat-card {
+      background: white; border-radius: 8px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.07), 0 0 0 1px rgba(0,0,0,0.04);
+      padding: 18px 20px;
+      display: flex; align-items: center; gap: 14px;
+    }
+    .stat-icon {
+      width: 40px; height: 40px; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center; font-size: 18px;
+      flex-shrink: 0;
+    }
+    .stat-num { font-size: 22px; font-weight: 700; color: #1a1a1a; line-height: 1; }
+    .stat-label { font-size: 11px; color: #6b7280; margin-top: 3px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.4px; }
+
+    @media (max-width: 900px) {
+      .gov-bar { padding: 10px 20px; }
+      .nav-bar { padding: 0 20px; }
+      .page-banner { padding: 16px 20px; }
+      .tab-strip { padding: 0 20px; }
+      .container { padding: 20px; }
+      .stats-bar { grid-template-columns: repeat(2, 1fr); }
+      .form-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════════════
+     LOGIN GATE — shown before the React app mounts
+═══════════════════════════════════════════════════════════════ -->
+<div id="loginGate" style="
+  position:fixed; inset:0; z-index:9999;
+  background: linear-gradient(135deg,#111 0%,#1f1f1f 50%,#111 100%);
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  font-family:'Inter','Segoe UI',sans-serif;
+">
+  <!-- DEWA branding -->
+  <div style="text-align:center; margin-bottom:32px;">
+    <div style="display:inline-flex;align-items:center;gap:14px;margin-bottom:12px;">
+      <div style="width:54px;height:54px;border:2px solid rgba(255,255,255,0.5);border-radius:50%;display:flex;align-items:center;justify-content:center;position:relative;">
+        <div style="width:36px;height:36px;border:1.5px solid rgba(255,255,255,0.35);border-radius:50%;"></div>
+        <div style="position:absolute;width:7px;height:24px;background:rgba(255,255,255,0.7);border-radius:3px;"></div>
+      </div>
+      <div style="text-align:left;">
+        <div style="color:rgba(255,255,255,0.9);font-size:14px;font-family:Arial;direction:rtl;">هيئة كهرباء ومياه دبي</div>
+        <div style="color:rgba(255,255,255,0.5);font-size:10px;letter-spacing:1.5px;text-transform:uppercase;">Dubai Electricity &amp; Water Authority</div>
+      </div>
+    </div>
+    <h1 style="color:white;font-size:20px;font-weight:700;letter-spacing:0.3px;">Insurance Administration Portal</h1>
+    <p style="color:rgba(255,255,255,0.4);font-size:12px;margin-top:6px;">Vendor access is required to use this portal</p>
+  </div>
+
+  <!-- Login card -->
+  <div style="background:white;border-radius:12px;width:380px;overflow:hidden;box-shadow:0 24px 80px rgba(0,0,0,0.5);">
+    <!-- Tabs -->
+    <div style="display:flex;border-bottom:1px solid #f0f0f0;">
+      <div id="loginTab" onclick="showLoginTab('login')"
+        style="flex:1;padding:14px;text-align:center;font-size:13px;font-weight:600;cursor:pointer;color:#1a1a1a;border-bottom:3px solid #1a1a1a;">
+        🔑 Vendor Login
+      </div>
+      <div id="requestTab" onclick="showLoginTab('request')"
+        style="flex:1;padding:14px;text-align:center;font-size:13px;font-weight:600;cursor:pointer;color:#9ca3af;border-bottom:3px solid transparent;">
+        📋 Request Access
+      </div>
+    </div>
+
+    <!-- Login form -->
+    <div id="loginPanel" style="padding:28px;">
+      <div style="margin-bottom:16px;">
+        <label style="display:block;font-size:11px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.6px;margin-bottom:6px;">Email Address</label>
+        <input id="gateEmail" type="email" placeholder="your@company.ae"
+          style="width:100%;border:1.5px solid #e5e7eb;border-radius:6px;padding:10px 12px;font-size:14px;font-family:inherit;transition:all 0.18s;background:#fafafa;"
+          onfocus="this.style.borderColor='#1a1a1a';this.style.background='white'"
+          onblur="this.style.borderColor='#e5e7eb';this.style.background='#fafafa'"
+          onkeydown="if(event.key==='Enter')document.getElementById('gateCode').focus()" />
+      </div>
+      <div style="margin-bottom:20px;">
+        <label style="display:block;font-size:11px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.6px;margin-bottom:6px;">Access Code</label>
+        <input id="gateCode" type="text" placeholder="e.g. A1B2-C3D4" maxlength="9"
+          style="width:100%;border:1.5px solid #e5e7eb;border-radius:6px;padding:10px 12px;font-size:16px;font-family:monospace;font-weight:700;letter-spacing:2px;text-transform:uppercase;transition:all 0.18s;background:#fafafa;"
+          onfocus="this.style.borderColor='#1a1a1a';this.style.background='white'"
+          onblur="this.style.borderColor='#e5e7eb';this.style.background='#fafafa'"
+          onkeydown="if(event.key==='Enter')doVendorLogin()" />
+      </div>
+      <div id="gateError" style="display:none;background:#fef2f2;border:1px solid #fecaca;border-radius:6px;padding:10px 12px;font-size:12.5px;color:#991b1b;margin-bottom:16px;">
+        ⚠ Invalid email or access code. Please check your details or request access.
+      </div>
+      <button onclick="doVendorLogin()" style="
+        width:100%;padding:12px;background:#1a1a1a;color:white;border:none;border-radius:7px;
+        font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;transition:background 0.18s;
+        display:flex;align-items:center;justify-content:center;gap:8px;
+      " onmouseover="this.style.background='#333'" onmouseout="this.style.background='#1a1a1a'">
+        🔑 Sign In
+      </button>
+      <p style="text-align:center;font-size:12px;color:#9ca3af;margin-top:16px;">
+        Don't have an access code?
+        <span onclick="showLoginTab('request')" style="color:#1a1a1a;font-weight:600;cursor:pointer;text-decoration:underline;">Request access →</span>
+      </p>
+    </div>
+
+    <!-- Request-access redirect panel -->
+    <div id="requestPanel" style="display:none;padding:28px;text-align:center;">
+      <div style="font-size:48px;margin-bottom:12px;">📋</div>
+      <h3 style="font-size:16px;font-weight:700;color:#1a1a1a;margin-bottom:8px;">Request Portal Access</h3>
+      <p style="font-size:13px;color:#6b7280;line-height:1.7;margin-bottom:20px;">
+        Fill in your company details and submit a request. The DEWA team will review your request and send you an email with your access code within 1–2 business days.
+      </p>
+      <a href="request.html" style="
+        display:block;width:100%;padding:12px;background:#1a1a1a;color:white;
+        border-radius:7px;font-size:14px;font-weight:600;text-decoration:none;
+        text-align:center;transition:background 0.18s;
+      " onmouseover="this.style.background='#333'" onmouseout="this.style.background='#1a1a1a'">
+        Submit Access Request →
+      </a>
+      <p style="text-align:center;font-size:12px;color:#9ca3af;margin-top:16px;">
+        Already have a code?
+        <span onclick="showLoginTab('login')" style="color:#1a1a1a;font-weight:600;cursor:pointer;text-decoration:underline;">Login here →</span>
+      </p>
+    </div>
+  </div>
+
+  <!-- Admin link -->
+  <p style="margin-top:24px;font-size:11px;color:rgba(255,255,255,0.25);">
+    DEWA Admin?
+    <a href="admin.html" style="color:rgba(255,255,255,0.4);text-decoration:none;" onmouseover="this.style.color='rgba(255,255,255,0.7)'" onmouseout="this.style.color='rgba(255,255,255,0.4)'">Access Admin Panel →</a>
+  </p>
+</div>
+<!-- END LOGIN GATE -->
+
+<script>
+// ── Access-code algorithm (must match admin.html exactly) ────────────────
+function generateAccessCode(email) {
+  const secret = 'DEWA-INSURANCE-2024-SECURE';
+  const str = email.toLowerCase().trim() + '::' + secret;
+  let h = 5381;
+  for (let i = 0; i < str.length; i++) {
+    h = Math.imul(31, h) + str.charCodeAt(i) | 0;
+  }
+  const raw = Math.abs(h).toString(36).toUpperCase().padStart(8, '0').slice(0, 8);
+  return raw.slice(0, 4) + '-' + raw.slice(4);
+}
+
+function showLoginTab(tab) {
+  const isLogin = tab === 'login';
+  document.getElementById('loginPanel').style.display   = isLogin ? 'block' : 'none';
+  document.getElementById('requestPanel').style.display = isLogin ? 'none'  : 'block';
+  document.getElementById('loginTab').style.color        = isLogin ? '#1a1a1a' : '#9ca3af';
+  document.getElementById('loginTab').style.borderBottomColor = isLogin ? '#1a1a1a' : 'transparent';
+  document.getElementById('requestTab').style.color      = isLogin ? '#9ca3af' : '#1a1a1a';
+  document.getElementById('requestTab').style.borderBottomColor = isLogin ? 'transparent' : '#1a1a1a';
+}
+
+function doVendorLogin() {
+  const email = document.getElementById('gateEmail').value.trim();
+  const code  = document.getElementById('gateCode').value.trim().toUpperCase();
+  const err   = document.getElementById('gateError');
+
+  if (!email || !code) { err.style.display = 'block'; return; }
+
+  const expected = generateAccessCode(email);
+  if (code !== expected) { err.style.display = 'block'; return; }
+
+  // Valid — dismiss the gate and store session
+  err.style.display = 'none';
+  sessionStorage.setItem('dewaVendorAuth', JSON.stringify({ email, loginAt: Date.now() }));
+  document.getElementById('loginGate').style.display = 'none';
+}
+
+// Auto-dismiss if already authenticated this session
+(function() {
+  const auth = sessionStorage.getItem('dewaVendorAuth');
+  if (auth) document.getElementById('loginGate').style.display = 'none';
+})();
+</script>
+
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useRef } = React;
+
+// ── Constants ──────────────────────────────────────────────────────────────
+const INSURANCE_TYPES = [
+  { id: 1, code: 'CAR',  label: "Contractor's All Risk (CAR)",   icon: '🏗️' },
+  { id: 2, code: 'PI',   label: 'Professional Indemnity (PI)',    icon: '📋' },
+  { id: 3, code: 'PL',   label: 'Public Liability (PL)',          icon: '🛡️' },
+  { id: 4, code: 'EL',   label: "Employer's Liability (EL)",      icon: '👷' },
+  { id: 5, code: 'MAR',  label: 'Marine Insurance',               icon: '⚓' },
+  { id: 6, code: 'MV',   label: 'Motor Vehicle Insurance (MV)',   icon: '🚗' },
+  { id: 7, code: 'PROP', label: 'Property / Assets Insurance',    icon: '🏢' },
+];
+
+const VENDORS = [
+  'Al Futtaim Engineering', 'Siemens LLC', 'ABB Power', 'Schneider Electric UAE',
+  'Larsen & Toubro', 'Drake & Scull', 'Emaar Facilities', 'Techno Q',
+];
+
+const SAMPLE_POS = [
+  { poNumber: 'PO-2024-001', vendor: 'Al Futtaim Engineering', description: 'HV Cable Installation – Al Quoz', startDate: '2024-01-15', endDate: '2025-01-14' },
+  { poNumber: 'PO-2024-002', vendor: 'Siemens LLC', description: 'Substation Upgrade – Deira', startDate: '2024-02-01', endDate: '2024-12-31' },
+  { poNumber: 'PO-2024-003', vendor: 'ABB Power', description: 'Transformer Supply & Install', startDate: '2024-03-10', endDate: '2025-03-09' },
+  { poNumber: 'PO-2024-004', vendor: 'Al Futtaim Engineering', description: 'Civil Works – Jebel Ali', startDate: '2024-04-01', endDate: '2024-10-31' },
+];
+
+function uid() { return '_' + Math.random().toString(36).substr(2, 9); }
+function fmt(n) { return new Intl.NumberFormat('en-AE', { style: 'currency', currency: 'AED', maximumFractionDigits: 0 }).format(n); }
+
+// ── Root App ───────────────────────────────────────────────────────────────
+function App() {
+  const [tab, setTab] = useState('setup');
+  const [poList, setPoList] = useState(SAMPLE_POS);
+  const [requirements, setRequirements] = useState({});
+  const [submissions, setSubmissions] = useState({});
+
+  const totalPolicies = Object.values(requirements).reduce((s, r) => s + r.length, 0);
+  const totalSubmitted = Object.keys(submissions).length;
+
+  return (
+    <div>
+      {/* ── Government Top Bar ── */}
+      <div className="gov-bar">
+        <div className="gov-left">
+          <div className="gov-crest">
+            {/* Stylised Government of Dubai crest */}
+            <div className="gov-crest-icon">
+              <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M32 6 L38 18 L52 20 L42 30 L44 44 L32 38 L20 44 L22 30 L12 20 L26 18 Z" fill="none" stroke="rgba(255,255,255,0.85)" strokeWidth="2"/>
+                <circle cx="32" cy="32" r="10" fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth="1.5"/>
+                <path d="M28 26 L28 38 M36 26 L36 38 M24 32 L40 32" stroke="rgba(255,255,255,0.7)" strokeWidth="1.2" strokeLinecap="round"/>
+              </svg>
+            </div>
+            <div className="gov-crest-text">
+              <div className="ar" style={{fontFamily:'Arial',direction:'rtl'}}>حكومة دبـي</div>
+              <div className="en">GOVERNMENT OF DUBAI</div>
+            </div>
+          </div>
+        </div>
+
+        <div className="gov-right">
+          <div className="dewa-brand">
+            <div className="dewa-brand-text">
+              <div className="ar" style={{fontFamily:'Arial',direction:'rtl'}}>هيئة كهرباء ومياه دبي</div>
+              <div className="en">Dubai Electricity &amp; Water Authority</div>
+            </div>
+            <div className="dewa-circle">
+              <div className="dewa-circle-inner"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Navigation Bar ── */}
+      <div className="nav-bar">
+        <div className="nav-left">
+          <div className="hamburger">
+            <span/><span/><span/>
+          </div>
+          <div className="nav-links">
+            <div className="nav-link">Home</div>
+            <div className="nav-link">Investor Relations</div>
+            <div className="nav-link">EasyPay</div>
+            <div className="nav-link active">Insurance Admin</div>
+          </div>
+        </div>
+        <div className="nav-right">
+          <button className="nav-icon-btn" title="Search">🔍</button>
+          <button className="nav-icon-btn" title="Accessibility">♿</button>
+          <span className="nav-ar">العربية</span>
+          <button className="nav-signin">
+            <span style={{fontSize:14}}>👤</span> Sign In
+          </button>
+        </div>
+      </div>
+
+      {/* ── Page Banner ── */}
+      <div className="page-banner">
+        <h2>Insurance Administration System</h2>
+        <p>Vendor Insurance Policy Management · Purchase Order Compliance Tracking</p>
+      </div>
+
+      {/* ── Tab Strip ── */}
+      <div className="tab-strip">
+        {[
+          { id: 'setup',      label: 'PO & Insurance Setup',      icon: '⚙️' },
+          { id: 'submission', label: 'Vendor Submission',         icon: '📤' },
+          { id: 'validation', label: 'Validation & Summary',      icon: '✅' },
+        ].map(t => (
+          <div key={t.id} className={`tab-btn ${tab === t.id ? 'active' : ''}`} onClick={() => setTab(t.id)}>
+            <span>{t.icon}</span> {t.label}
+          </div>
+        ))}
+      </div>
+
+      {/* ── Stats Bar ── */}
+      <div className="container" style={{paddingBottom:0}}>
+        <div className="stats-bar">
+          {[
+            { icon:'📋', label:'Total POs', value: poList.length, bg:'#f3f4f6', color:'#1a1a1a' },
+            { icon:'🛡️', label:'Policy Requirements', value: totalPolicies, bg:'#dbeafe', color:'#1e40af' },
+            { icon:'📤', label:'Policies Submitted', value: totalSubmitted, bg:'#dcfce7', color:'#166534' },
+            { icon:'⏳', label:'Pending Submission', value: Math.max(0, totalPolicies - totalSubmitted), bg:'#fef9c3', color:'#854d0e' },
+          ].map(s => (
+            <div className="stat-card" key={s.label}>
+              <div className="stat-icon" style={{background: s.bg, color: s.color}}>{s.icon}</div>
+              <div>
+                <div className="stat-num">{s.value}</div>
+                <div className="stat-label">{s.label}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="container">
+        {tab === 'setup'      && <SetupTab poList={poList} setPoList={setPoList} requirements={requirements} setRequirements={setRequirements} />}
+        {tab === 'submission' && <SubmissionTab poList={poList} requirements={requirements} submissions={submissions} setSubmissions={setSubmissions} />}
+        {tab === 'validation' && <ValidationTab poList={poList} requirements={requirements} submissions={submissions} />}
+      </div>
+    </div>
+  );
+}
+
+// ── Tab 1: PO Setup ────────────────────────────────────────────────────────
+function SetupTab({ poList, setPoList, requirements, setRequirements }) {
+  const blankPO = { poNumber: '', vendor: '', description: '', startDate: '', endDate: '' };
+  const [poForm, setPoForm]     = useState(blankPO);
+  const [selectedPO, setSelectedPO] = useState(null);
+  const [reqForm, setReqForm]   = useState({ typeId: '', amount: '', startDate: '', endDate: '' });
+  const [poError, setPoError]   = useState('');
+
+  function addPO() {
+    if (!poForm.poNumber || !poForm.vendor) { setPoError('PO Number and Vendor are required.'); return; }
+    if (poList.find(p => p.poNumber === poForm.poNumber)) { setPoError('PO Number already exists.'); return; }
+    setPoList(prev => [...prev, { ...poForm }]);
+    setPoForm(blankPO); setPoError('');
+  }
+
+  function deletePO(poNumber) {
+    if (!confirm(`Delete PO ${poNumber} and all its requirements?`)) return;
+    setPoList(prev => prev.filter(p => p.poNumber !== poNumber));
+    setRequirements(prev => { const n = {...prev}; delete n[poNumber]; return n; });
+    if (selectedPO === poNumber) setSelectedPO(null);
+  }
+
+  function addRequirement() {
+    if (!reqForm.typeId || !reqForm.amount || !reqForm.startDate || !reqForm.endDate) return;
+    const existing = requirements[selectedPO] || [];
+    if (existing.find(r => r.typeId === parseInt(reqForm.typeId))) { alert('This type is already added.'); return; }
+    if (existing.length >= 7) { alert('Maximum 7 policies per PO.'); return; }
+    const newReq = { id: uid(), typeId: parseInt(reqForm.typeId), amount: parseFloat(reqForm.amount), startDate: reqForm.startDate, endDate: reqForm.endDate };
+    setRequirements(prev => ({ ...prev, [selectedPO]: [...(prev[selectedPO] || []), newReq] }));
+    setReqForm({ typeId: '', amount: '', startDate: '', endDate: '' });
+  }
+
+  function deleteReq(poNumber, reqId) {
+    setRequirements(prev => ({ ...prev, [poNumber]: prev[poNumber].filter(r => r.id !== reqId) }));
+  }
+
+  const poReqs       = selectedPO ? (requirements[selectedPO] || []) : [];
+  const usedTypeIds  = poReqs.map(r => r.typeId);
+  const availableTypes = INSURANCE_TYPES.filter(t => !usedTypeIds.includes(t.id));
+
+  return (
+    <>
+      <div className="card">
+        <div className="card-title"><div className="title-icon">+</div> Add Purchase Order</div>
+        <div className="form-grid">
+          <div className="form-group">
+            <label className="required">PO Number</label>
+            <input placeholder="e.g. PO-2024-005" value={poForm.poNumber}
+              onChange={e => setPoForm(p => ({...p, poNumber: e.target.value}))} />
+          </div>
+          <div className="form-group">
+            <label className="required">Vendor</label>
+            <select value={poForm.vendor} onChange={e => setPoForm(p => ({...p, vendor: e.target.value}))}>
+              <option value="">— Select Vendor —</option>
+              {VENDORS.map(v => <option key={v} value={v}>{v}</option>)}
+            </select>
+          </div>
+          <div className="form-group" style={{gridColumn:'span 2'}}>
+            <label>Project Description</label>
+            <input placeholder="Brief description of the project / scope" value={poForm.description}
+              onChange={e => setPoForm(p => ({...p, description: e.target.value}))} />
+          </div>
+          <div className="form-group">
+            <label>PO Start Date</label>
+            <input type="date" value={poForm.startDate} onChange={e => setPoForm(p => ({...p, startDate: e.target.value}))} />
+          </div>
+          <div className="form-group">
+            <label>PO End Date</label>
+            <input type="date" value={poForm.endDate} onChange={e => setPoForm(p => ({...p, endDate: e.target.value}))} />
+          </div>
+        </div>
+        {poError && <div className="alert alert-error mt-12">⚠️ {poError}</div>}
+        <div className="flex-end mt-16">
+          <button className="btn btn-primary" onClick={addPO}>＋ Add Purchase Order</button>
+        </div>
+      </div>
+
+      <div className="card">
+        <div className="card-title"><div className="title-icon">📋</div> Purchase Orders — Select to Configure Insurance Requirements</div>
+        <div className="table-wrap">
+          <table>
+            <thead>
+              <tr><th>PO Number</th><th>Vendor</th><th>Project Description</th><th>PO Period</th><th>Policies</th><th>Actions</th></tr>
+            </thead>
+            <tbody>
+              {poList.length === 0 && (
+                <tr><td colSpan={6}>
+                  <div className="empty-state"><div className="icon">📭</div><p>No Purchase Orders added yet.</p></div>
+                </td></tr>
+              )}
+              {poList.map(po => {
+                const reqs = requirements[po.poNumber] || [];
+                const isSel = selectedPO === po.poNumber;
+                return (
+                  <tr key={po.poNumber} style={{background: isSel ? '#f9fafb' : undefined}}>
+                    <td><strong style={{color:'#1a1a1a'}}>{po.poNumber}</strong></td>
+                    <td style={{color:'#374151'}}>{po.vendor}</td>
+                    <td style={{maxWidth:200, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis', color:'#6b7280'}}>{po.description}</td>
+                    <td style={{whiteSpace:'nowrap', fontSize:12, color:'#6b7280'}}>{po.startDate || '—'} → {po.endDate || '—'}</td>
+                    <td>
+                      <span className={`badge ${reqs.length > 0 ? 'badge-blue' : 'badge-gray'}`}>{reqs.length} / 7</span>
+                    </td>
+                    <td style={{whiteSpace:'nowrap'}}>
+                      <div className="flex gap-8">
+                        <button className={`btn btn-sm ${isSel ? 'btn-primary' : 'btn-outline'}`}
+                          onClick={() => setSelectedPO(isSel ? null : po.poNumber)}>
+                          {isSel ? '▲ Close' : '▼ Configure'}
+                        </button>
+                        <button className="btn btn-danger btn-sm" onClick={() => deletePO(po.poNumber)}>Remove</button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {selectedPO && (
+        <div className="card">
+          <div className="card-title">
+            <div className="title-icon">🛡️</div>
+            Insurance Requirements — {selectedPO}
+            <span className="badge badge-dark" style={{marginLeft:'auto'}}>{poReqs.length} / 7 Policies</span>
+          </div>
+
+          {availableTypes.length > 0 && (
+            <div className="req-box">
+              <div className="req-box-title">Add Policy Requirement</div>
+              <div className="form-grid">
+                <div className="form-group">
+                  <label className="required">Insurance Type</label>
+                  <select value={reqForm.typeId} onChange={e => setReqForm(p => ({...p, typeId: e.target.value}))}>
+                    <option value="">— Select Type —</option>
+                    {availableTypes.map(t => <option key={t.id} value={t.id}>{t.icon} {t.label}</option>)}
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label className="required">Required Cover (AED)</label>
+                  <input type="number" placeholder="e.g. 5000000" value={reqForm.amount}
+                    onChange={e => setReqForm(p => ({...p, amount: e.target.value}))} />
+                </div>
+                <div className="form-group">
+                  <label className="required">Cover Required From</label>
+                  <input type="date" value={reqForm.startDate} onChange={e => setReqForm(p => ({...p, startDate: e.target.value}))} />
+                </div>
+                <div className="form-group">
+                  <label className="required">Cover Required To</label>
+                  <input type="date" value={reqForm.endDate} onChange={e => setReqForm(p => ({...p, endDate: e.target.value}))} />
+                </div>
+              </div>
+              <div className="flex-end mt-12">
+                <button className="btn btn-success" onClick={addRequirement}>＋ Add Policy Requirement</button>
+              </div>
+            </div>
+          )}
+          {poReqs.length === 7 && (
+            <div className="alert alert-success mb-16">✅ All 7 insurance policy types have been configured for this PO.</div>
+          )}
+
+          <div className="table-wrap">
+            <table>
+              <thead>
+                <tr><th>#</th><th>Insurance Type</th><th>Required Cover (AED)</th><th>Required From</th><th>Required To</th><th>Action</th></tr>
+              </thead>
+              <tbody>
+                {poReqs.length === 0 && (
+                  <tr><td colSpan={6}>
+                    <div className="empty-state" style={{padding:'20px'}}>
+                      <p>No requirements added. Use the form above to add policy requirements for this PO.</p>
+                    </div>
+                  </td></tr>
+                )}
+                {poReqs.map((r, i) => {
+                  const type = INSURANCE_TYPES.find(t => t.id === r.typeId);
+                  return (
+                    <tr key={r.id}>
+                      <td style={{color:'#9ca3af', fontWeight:600}}>{i+1}</td>
+                      <td><strong>{type?.icon} {type?.label}</strong></td>
+                      <td style={{fontWeight:700, color:'#1a1a1a'}}>{fmt(r.amount)}</td>
+                      <td style={{fontSize:12, color:'#6b7280'}}>{r.startDate}</td>
+                      <td style={{fontSize:12, color:'#6b7280'}}>{r.endDate}</td>
+                      <td><button className="btn btn-danger btn-sm" onClick={() => deleteReq(selectedPO, r.id)}>Remove</button></td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+// ── Tab 2: Vendor Submission ───────────────────────────────────────────────
+function SubmissionTab({ poList, requirements, submissions, setSubmissions }) {
+  const [step, setStep]           = useState(1);
+  const [selVendor, setSelVendor] = useState('');
+  const [selPO, setSelPO]         = useState(null);
+  const [selReq, setSelReq]       = useState(null);
+  const [formData, setFormData]   = useState({ policyNumber:'', insurer:'', coverAmount:'', validFrom:'', validTo:'', insuredName:'', remarks:'', file:null, fileName:'' });
+  const [touched, setTouched]     = useState({});
+  const [dragOver, setDragOver]   = useState(false);
+  const [submitMsg, setSubmitMsg] = useState('');
+  const fileRef = useRef();
+
+  const vendorPOs   = selVendor ? poList.filter(p => p.vendor === selVendor) : [];
+  const poReqs      = selPO ? (requirements[selPO.poNumber] || []) : [];
+  const submKey     = selPO && selReq ? `${selPO.poNumber}_${selReq.typeId}` : null;
+  const existingSub = submKey ? submissions[submKey] : null;
+
+  // ── Per-field validation against DEWA requirement ──
+  function getFieldErrors(data, req) {
+    if (!req) return {};
+    const errors = {};
+    // Coverage amount
+    if (data.coverAmount !== '') {
+      const entered = parseFloat(data.coverAmount);
+      if (isNaN(entered) || entered <= 0) {
+        errors.coverAmount = 'Please enter a valid amount.';
+      } else if (entered < req.amount) {
+        errors.coverAmount = `Amount AED ${entered.toLocaleString()} is less than the required AED ${req.amount.toLocaleString()}. Shortfall: AED ${(req.amount - entered).toLocaleString()}.`;
+      }
+    }
+    // Valid From — must be on or before req.startDate
+    if (data.validFrom !== '') {
+      if (new Date(data.validFrom) > new Date(req.startDate)) {
+        errors.validFrom = `Policy must start on or before ${req.startDate}. Entered start date is ${Math.round((new Date(data.validFrom) - new Date(req.startDate)) / 86400000)} day(s) late.`;
+      }
+    }
+    // Valid To — must be on or after req.endDate
+    if (data.validTo !== '') {
+      if (new Date(data.validTo) < new Date(req.endDate)) {
+        errors.validTo = `Policy must remain valid until at least ${req.endDate}. Entered expiry is ${Math.round((new Date(req.endDate) - new Date(data.validTo)) / 86400000)} day(s) short.`;
+      }
+      // Also check validTo is after validFrom
+      if (data.validFrom && new Date(data.validTo) <= new Date(data.validFrom)) {
+        errors.validTo = 'Policy expiry date must be after the start date.';
+      }
+    }
+    return errors;
+  }
+
+  // Overall compliance banner
+  function getComplianceSummary(data, req) {
+    if (!req) return null;
+    const issues = [];
+    const { coverAmount, validFrom, validTo } = data;
+    if (!coverAmount && !validFrom && !validTo) return null;
+    if (coverAmount) {
+      const entered = parseFloat(coverAmount);
+      if (!isNaN(entered) && entered < req.amount)
+        issues.push(`Coverage is AED ${(req.amount - entered).toLocaleString()} short of the requirement.`);
+    }
+    if (validFrom && new Date(validFrom) > new Date(req.startDate))
+      issues.push(`Policy start date does not cover from ${req.startDate}.`);
+    if (validTo && new Date(validTo) < new Date(req.endDate))
+      issues.push(`Policy expires before the required end date of ${req.endDate}.`);
+
+    const hasValues = coverAmount || validFrom || validTo;
+    const allFilled = coverAmount && validFrom && validTo;
+    if (!hasValues) return null;
+    if (issues.length === 0 && allFilled) return { type:'pass', message:'All entered values meet DEWA requirements.' };
+    if (issues.length > 0) return { type: allFilled ? 'fail' : 'partial', issues };
+    return null;
+  }
+
+  function touch(field) {
+    setTouched(p => ({...p, [field]: true}));
+  }
+
+  function selectVendor(v) {
+    setSelVendor(v); setSelPO(null); setSelReq(null); setSubmitMsg('');
+    resetForm(); setStep(v ? 2 : 1);
+  }
+  function selectPO(po) {
+    setSelPO(po); setSelReq(null); setSubmitMsg('');
+    resetForm(); setStep(po ? 3 : 2);
+  }
+  function selectReq(req) {
+    setSelReq(req); setSubmitMsg(''); setTouched({});
+    const ex = submissions[`${selPO.poNumber}_${req.typeId}`];
+    setFormData(ex ? {...ex} : { policyNumber:'', insurer:'', coverAmount:'', validFrom:'', validTo:'', insuredName:'', remarks:'', file:null, fileName:'' });
+    setStep(4);
+  }
+  function resetForm() {
+    setFormData({ policyNumber:'', insurer:'', coverAmount:'', validFrom:'', validTo:'', insuredName:'', remarks:'', file:null, fileName:'' });
+    setTouched({});
+  }
+
+  function handleFile(file) {
+    if (!file) return;
+    if (!['application/pdf','image/jpeg','image/png'].includes(file.type)) { alert('Only PDF, JPG, or PNG files accepted.'); return; }
+    if (file.size > 10*1024*1024) { alert('File must be under 10 MB.'); return; }
+    setFormData(p => ({...p, file, fileName: file.name}));
+  }
+
+  function submit() {
+    // Mark all fields touched to show all errors
+    setTouched({ policyNumber:true, insurer:true, coverAmount:true, validFrom:true, validTo:true, insuredName:true });
+    const { policyNumber, insurer, coverAmount, validFrom, validTo, insuredName } = formData;
+    if (!policyNumber || !insurer || !coverAmount || !validFrom || !validTo || !insuredName) return;
+    const errs = getFieldErrors(formData, selReq);
+    if (Object.keys(errs).length > 0) return;
+    if (!formData.file && !existingSub?.file) { alert('Please upload the insurance policy document.'); return; }
+    setSubmissions(prev => ({ ...prev, [submKey]: { ...formData, submittedAt: new Date().toISOString() } }));
+    setSubmitMsg('Policy submitted successfully.');
+    setTimeout(() => { setSelReq(null); setStep(3); setSubmitMsg(''); }, 2200);
+  }
+
+  function getReqStatus(req) {
+    const sub = submissions[`${selPO?.poNumber}_${req.typeId}`];
+    if (!sub) return 'pending';
+    const ok = parseFloat(sub.coverAmount) >= req.amount
+      && new Date(sub.validFrom) <= new Date(req.startDate)
+      && new Date(sub.validTo)   >= new Date(req.endDate);
+    return ok ? 'compliant' : 'non-compliant';
+  }
+
+  const steps = [
+    { n:1, label:'Select Vendor' }, { n:2, label:'Select PO' },
+    { n:3, label:'Select Policy' }, { n:4, label:'Submit Document' },
+  ];
+
+  return (
+    <>
+      <div className="card">
+        <div className="card-title"><div className="title-icon">📤</div> Vendor Insurance Submission</div>
+        <div className="step-indicator">
+          {steps.map((s, i) => (
+            <React.Fragment key={s.n}>
+              <div className="step">
+                <div className={`step-num ${step > s.n ? 'done' : step === s.n ? 'active' : 'pending'}`}>
+                  {step > s.n ? '✓' : s.n}
+                </div>
+                <span className={`step-label ${step > s.n ? 'done' : step === s.n ? 'active' : 'pending'}`}>{s.label}</span>
+              </div>
+              {i < steps.length-1 && <div className={`step-divider ${step > s.n ? 'done' : ''}`} />}
+            </React.Fragment>
+          ))}
+        </div>
+        <div className="form-group" style={{maxWidth:380}}>
+          <label className="required">Vendor Name</label>
+          <select value={selVendor} onChange={e => selectVendor(e.target.value)}>
+            <option value="">— Select Vendor —</option>
+            {VENDORS.map(v => <option key={v} value={v}>{v}</option>)}
+          </select>
+        </div>
+      </div>
+
+      {selVendor && (
+        <div className="card">
+          <div className="card-title"><div className="title-icon">📋</div> Purchase Orders — {selVendor}</div>
+          {vendorPOs.length === 0
+            ? <div className="alert alert-warning">No Purchase Orders found for this vendor.</div>
+            : (
+              <div className="table-wrap">
+                <table>
+                  <thead><tr><th>PO Number</th><th>Description</th><th>PO Period</th><th>Required</th><th>Submitted</th><th>Select</th></tr></thead>
+                  <tbody>
+                    {vendorPOs.map(po => {
+                      const reqs = requirements[po.poNumber] || [];
+                      const submitted = reqs.filter(r => submissions[`${po.poNumber}_${r.typeId}`]).length;
+                      return (
+                        <tr key={po.poNumber} style={{background: selPO?.poNumber===po.poNumber ? '#f9fafb' : undefined}}>
+                          <td><strong style={{color:'#1a1a1a'}}>{po.poNumber}</strong></td>
+                          <td style={{color:'#6b7280'}}>{po.description}</td>
+                          <td style={{fontSize:12, color:'#6b7280', whiteSpace:'nowrap'}}>{po.startDate} → {po.endDate}</td>
+                          <td><span className="badge badge-blue">{reqs.length} policies</span></td>
+                          <td><span className={`badge ${submitted===reqs.length && reqs.length>0 ? 'badge-green' : 'badge-yellow'}`}>{submitted} submitted</span></td>
+                          <td>
+                            <button className={`btn btn-sm ${selPO?.poNumber===po.poNumber ? 'btn-primary' : 'btn-outline'}`}
+                              onClick={() => selectPO(selPO?.poNumber===po.poNumber ? null : po)}>
+                              {selPO?.poNumber===po.poNumber ? '✓ Selected' : 'Select'}
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+        </div>
+      )}
+
+      {selPO && (
+        <div className="card">
+          <div className="card-title"><div className="title-icon">🛡️</div> Insurance Policies — {selPO.poNumber}</div>
+          {poReqs.length === 0
+            ? <div className="alert alert-warning">No insurance requirements configured for this PO. Contact DEWA administrator.</div>
+            : (
+              <div className="policy-grid">
+                {poReqs.map(req => {
+                  const type   = INSURANCE_TYPES.find(t => t.id === req.typeId);
+                  const status = getReqStatus(req);
+                  const isSel  = selReq?.id === req.id;
+                  return (
+                    <div key={req.id} className={`policy-card ${isSel ? 'selected' : ''}`} onClick={() => selectReq(isSel ? null : req)}>
+                      <div style={{fontSize:26}}>{type?.icon}</div>
+                      <div className="policy-type">{type?.label}</div>
+                      <div className="policy-meta" style={{marginTop:6}}>Required: <strong>{fmt(req.amount)}</strong></div>
+                      <div className="policy-meta">{req.startDate} → {req.endDate}</div>
+                      <div style={{marginTop:10}}>
+                        <span className={`badge ${status==='compliant' ? 'badge-green' : status==='non-compliant' ? 'badge-red' : 'badge-yellow'}`}>
+                          {status==='compliant' ? '✓ Compliant' : status==='non-compliant' ? '⚠ Non-Compliant' : '● Pending'}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )
+          }
+        </div>
+      )}
+
+      {selReq && selPO && (() => {
+        const fieldErrors = getFieldErrors(formData, selReq);
+        const compliance  = getComplianceSummary(formData, selReq);
+
+        function inputClass(field) {
+          if (!touched[field] || !formData[field]) return '';
+          return fieldErrors[field] ? 'input-error' : 'input-ok';
+        }
+
+        return (
+        <div className="card">
+          {submitMsg && <div className="alert alert-success mb-16">✅ {submitMsg}</div>}
+          <div className="card-title">
+            <div className="title-icon">📤</div>
+            Submit Policy — {INSURANCE_TYPES.find(t=>t.id===selReq.typeId)?.label}
+          </div>
+
+          {/* DEWA requirement reference bar */}
+          <div className="alert alert-info mb-16" style={{flexDirection:'column', gap:6}}>
+            <strong style={{fontSize:12, textTransform:'uppercase', letterSpacing:'0.5px'}}>DEWA Requirement</strong>
+            <div style={{display:'flex', gap:24, flexWrap:'wrap', fontSize:13}}>
+              <span>Minimum Cover: <strong>≥ {fmt(selReq.amount)}</strong></span>
+              <span>Policy must start: <strong>on or before {selReq.startDate}</strong></span>
+              <span>Policy must end: <strong>on or after {selReq.endDate}</strong></span>
+            </div>
+          </div>
+
+          {/* Live compliance banner */}
+          {compliance && (
+            <div className={`compliance-banner ${compliance.type}`}>
+              <div className="cb-icon">
+                {compliance.type==='pass' ? '✅' : compliance.type==='fail' ? '❌' : '⚠️'}
+              </div>
+              <div>
+                {compliance.type==='pass'
+                  ? <strong>{compliance.message}</strong>
+                  : <>
+                      <strong>{compliance.type==='fail' ? 'Policy does not meet DEWA requirements:' : 'Some values do not meet requirements:'}</strong>
+                      <ul>{compliance.issues.map((iss,i) => <li key={i}>{iss}</li>)}</ul>
+                    </>
+                }
+              </div>
+            </div>
+          )}
+
+          <div className="form-grid">
+            <div className="form-group">
+              <label className="required">Policy Number</label>
+              <input placeholder="e.g. POL-2024-XXXXX" value={formData.policyNumber}
+                className={touched.policyNumber && !formData.policyNumber ? 'input-error' : ''}
+                onChange={e => setFormData(p=>({...p, policyNumber:e.target.value}))}
+                onBlur={() => touch('policyNumber')} />
+              {touched.policyNumber && !formData.policyNumber &&
+                <span className="field-error">Policy number is required.</span>}
+            </div>
+
+            <div className="form-group">
+              <label className="required">Insurance Company</label>
+              <input placeholder="e.g. AXA Insurance UAE" value={formData.insurer}
+                className={touched.insurer && !formData.insurer ? 'input-error' : ''}
+                onChange={e => setFormData(p=>({...p, insurer:e.target.value}))}
+                onBlur={() => touch('insurer')} />
+              {touched.insurer && !formData.insurer &&
+                <span className="field-error">Insurance company name is required.</span>}
+            </div>
+
+            <div className="form-group">
+              <label className="required">Insured Name</label>
+              <input placeholder="Name of insured entity" value={formData.insuredName}
+                className={touched.insuredName && !formData.insuredName ? 'input-error' : ''}
+                onChange={e => setFormData(p=>({...p, insuredName:e.target.value}))}
+                onBlur={() => touch('insuredName')} />
+              {touched.insuredName && !formData.insuredName &&
+                <span className="field-error">Insured name is required.</span>}
+            </div>
+
+            <div className="form-group">
+              <label className="required">Coverage Amount (AED)</label>
+              <input type="number" placeholder={`Min. ${selReq.amount.toLocaleString()}`}
+                value={formData.coverAmount}
+                className={touched.coverAmount && formData.coverAmount ? inputClass('coverAmount') : touched.coverAmount && !formData.coverAmount ? 'input-error' : ''}
+                onChange={e => { setFormData(p=>({...p, coverAmount:e.target.value})); touch('coverAmount'); }}
+                onBlur={() => touch('coverAmount')} />
+              {touched.coverAmount && !formData.coverAmount &&
+                <span className="field-error">Coverage amount is required.</span>}
+              {touched.coverAmount && formData.coverAmount && fieldErrors.coverAmount &&
+                <span className="field-error">{fieldErrors.coverAmount}</span>}
+              {touched.coverAmount && formData.coverAmount && !fieldErrors.coverAmount &&
+                <span className="field-ok">Coverage amount meets the requirement.</span>}
+            </div>
+
+            <div className="form-group">
+              <label className="required">Policy Valid From</label>
+              <input type="date" value={formData.validFrom}
+                className={touched.validFrom && formData.validFrom ? inputClass('validFrom') : touched.validFrom && !formData.validFrom ? 'input-error' : ''}
+                onChange={e => { setFormData(p=>({...p, validFrom:e.target.value})); touch('validFrom'); }}
+                onBlur={() => touch('validFrom')} />
+              {touched.validFrom && !formData.validFrom &&
+                <span className="field-error">Start date is required.</span>}
+              {touched.validFrom && formData.validFrom && fieldErrors.validFrom &&
+                <span className="field-error">{fieldErrors.validFrom}</span>}
+              {touched.validFrom && formData.validFrom && !fieldErrors.validFrom &&
+                <span className="field-ok">Start date covers the required period.</span>}
+            </div>
+
+            <div className="form-group">
+              <label className="required">Policy Valid To</label>
+              <input type="date" value={formData.validTo}
+                className={touched.validTo && formData.validTo ? inputClass('validTo') : touched.validTo && !formData.validTo ? 'input-error' : ''}
+                onChange={e => { setFormData(p=>({...p, validTo:e.target.value})); touch('validTo'); }}
+                onBlur={() => touch('validTo')} />
+              {touched.validTo && !formData.validTo &&
+                <span className="field-error">Expiry date is required.</span>}
+              {touched.validTo && formData.validTo && fieldErrors.validTo &&
+                <span className="field-error">{fieldErrors.validTo}</span>}
+              {touched.validTo && formData.validTo && !fieldErrors.validTo &&
+                <span className="field-ok">Expiry date covers the required period.</span>}
+            </div>
+
+            <div className="form-group" style={{gridColumn:'span 2'}}>
+              <label>Remarks / Notes</label>
+              <textarea placeholder="Any additional information about this policy..." value={formData.remarks}
+                onChange={e => setFormData(p=>({...p, remarks:e.target.value}))} />
+            </div>
+          </div>
+
+          <div style={{marginTop:16}}>
+            <label style={{fontSize:11, fontWeight:600, color:'#6b7280', textTransform:'uppercase', letterSpacing:'0.6px', display:'block', marginBottom:8}}>
+              Policy Document (PDF / JPG / PNG) *
+            </label>
+            <div className={`upload-zone ${dragOver ? 'dragover' : ''}`}
+              onDragOver={e => { e.preventDefault(); setDragOver(true); }}
+              onDragLeave={() => setDragOver(false)}
+              onDrop={e => { e.preventDefault(); setDragOver(false); handleFile(e.dataTransfer.files[0]); }}
+              onClick={() => fileRef.current.click()}>
+              <div className="upload-icon">📎</div>
+              <p><strong>Click to upload</strong> or drag and drop</p>
+              <p>PDF, JPG, PNG — max 10 MB</p>
+            </div>
+            <input type="file" ref={fileRef} accept=".pdf,.jpg,.jpeg,.png"
+              onChange={e => handleFile(e.target.files[0])} />
+            {formData.fileName && (
+              <div style={{marginTop:8}}>
+                <span className="file-chip">
+                  📄 {formData.fileName}
+                  <button onClick={() => setFormData(p=>({...p, file:null, fileName:''}))}>✕</button>
+                </span>
+              </div>
+            )}
+          </div>
+
+          <div className="flex-end mt-16 gap-8">
+            <button className="btn btn-outline" onClick={() => { setSelReq(null); setStep(3); }}>Cancel</button>
+            <button className="btn btn-success"
+              onClick={submit}
+              disabled={Object.keys(getFieldErrors(formData, selReq)).length > 0 && (touched.coverAmount || touched.validFrom || touched.validTo)}>
+              📤 Submit Insurance Policy
+            </button>
+          </div>
+        </div>
+        );
+      })()}
+    </>
+  );
+}
+
+// ── Tab 3: Validation & Summary ────────────────────────────────────────────
+function ValidationTab({ poList, requirements, submissions }) {
+  const [selPO, setSelPO]       = useState(null);
+  const [selVendor, setSelVendor] = useState('');
+
+  const filteredPOs = selVendor ? poList.filter(p => p.vendor === selVendor) : poList;
+
+  function validate(req, poNumber) {
+    const sub = submissions[`${poNumber}_${req.typeId}`];
+    if (!sub) return { status:'missing', issues:['Policy document not submitted'], sub: null };
+    const issues = [];
+    if (parseFloat(sub.coverAmount) < req.amount)
+      issues.push(`Coverage ${fmt(parseFloat(sub.coverAmount))} is below required ${fmt(req.amount)}`);
+    if (new Date(sub.validFrom) > new Date(req.startDate))
+      issues.push(`Policy starts ${sub.validFrom} — must start on or before ${req.startDate}`);
+    if (new Date(sub.validTo) < new Date(req.endDate))
+      issues.push(`Policy expires ${sub.validTo} — must cover until at least ${req.endDate}`);
+    return { status: issues.length === 0 ? 'compliant' : 'non-compliant', issues, sub };
+  }
+
+  function getSummary(po) {
+    const reqs = requirements[po.poNumber] || [];
+    if (reqs.length === 0) return { total:0, compliant:0, missing:0, nonCompliant:0, overall:'no-req' };
+    let compliant=0, missing=0, nonCompliant=0;
+    reqs.forEach(r => {
+      const v = validate(r, po.poNumber);
+      if (v.status==='compliant') compliant++;
+      else if (v.status==='missing') missing++;
+      else nonCompliant++;
+    });
+    const overall = (missing===0 && nonCompliant===0) ? 'compliant'
+      : (missing===reqs.length) ? 'no-submission' : 'partial';
+    return { total:reqs.length, compliant, missing, nonCompliant, overall };
+  }
+
+  function downloadPDF(po) {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
+    const pageW = 210, margin = 14;
+
+    // Header band
+    doc.setFillColor(26, 26, 26);
+    doc.rect(0, 0, pageW, 32, 'F');
+    doc.setTextColor(255,255,255);
+    doc.setFontSize(15); doc.setFont(undefined,'bold');
+    doc.text('DEWA — Insurance Compliance Report', margin, 13);
+    doc.setFontSize(8); doc.setFont(undefined,'normal');
+    doc.text('Dubai Electricity and Water Authority · Insurance Administration System', margin, 20);
+    doc.text(`Generated: ${new Date().toLocaleDateString('en-AE', {day:'2-digit',month:'short',year:'numeric'})}`, pageW-margin, 20, {align:'right'});
+
+    // Gold accent line
+    doc.setFillColor(180, 83, 9);
+    doc.rect(0, 32, pageW, 2.5, 'F');
+
+    let y = 42;
+    doc.setTextColor(0,0,0);
+
+    // PO Details
+    doc.setFillColor(249, 250, 251);
+    doc.roundedRect(margin, y, pageW-2*margin, 26, 2, 2, 'F');
+    doc.setDrawColor(229,231,235);
+    doc.roundedRect(margin, y, pageW-2*margin, 26, 2, 2, 'S');
+    doc.setFontSize(9); doc.setFont(undefined,'bold'); doc.setTextColor(26,26,26);
+    doc.text('PURCHASE ORDER DETAILS', margin+4, y+7);
+    doc.setFont(undefined,'normal'); doc.setFontSize(8.5); doc.setTextColor(55,65,81);
+    doc.text(`PO Number: ${po.poNumber}`, margin+4, y+14);
+    doc.text(`Description: ${po.description || 'N/A'}`, margin+4, y+20);
+    doc.text(`Vendor: ${po.vendor}`, pageW/2, y+14);
+    doc.text(`Period: ${po.startDate || 'N/A'} to ${po.endDate || 'N/A'}`, pageW/2, y+20);
+    y += 32;
+
+    const reqs = requirements[po.poNumber] || [];
+    const summary = getSummary(po);
+    const ovLabel = summary.overall==='compliant' ? 'FULLY COMPLIANT' : summary.overall==='partial' ? 'PARTIALLY COMPLIANT' : 'NON-COMPLIANT / INCOMPLETE';
+    const ovColor = summary.overall==='compliant' ? [22,101,52] : summary.overall==='partial' ? [133,77,14] : [153,27,27];
+
+    // Status summary
+    doc.setFillColor(...ovColor);
+    doc.roundedRect(margin, y, pageW-2*margin, 16, 2, 2, 'F');
+    doc.setTextColor(255,255,255);
+    doc.setFontSize(9); doc.setFont(undefined,'bold');
+    doc.text(`Overall Status: ${ovLabel}`, margin+4, y+6.5);
+    doc.setFont(undefined,'normal'); doc.setFontSize(8);
+    doc.text(`Total Policies: ${summary.total}   |   Compliant: ${summary.compliant}   |   Non-Compliant: ${summary.nonCompliant}   |   Missing: ${summary.missing}`, margin+4, y+12.5);
+    y += 22;
+
+    // Table
+    doc.setTextColor(26,26,26);
+    doc.setFontSize(10); doc.setFont(undefined,'bold');
+    doc.text('Policy-wise Compliance', margin, y);
+    y += 5;
+
+    const rows = reqs.map((req, i) => {
+      const type = INSURANCE_TYPES.find(t=>t.id===req.typeId);
+      const v = validate(req, po.poNumber);
+      return [
+        (i+1)+'',
+        type?.label || '',
+        `AED ${req.amount.toLocaleString()}`,
+        v.sub ? `AED ${parseFloat(v.sub.coverAmount).toLocaleString()}` : '—',
+        `${req.startDate}\n${req.endDate}`,
+        v.sub ? `${v.sub.validFrom}\n${v.sub.validTo}` : '—',
+        v.sub?.policyNumber || '—',
+        v.sub?.insurer || '—',
+        v.status==='compliant' ? 'COMPLIANT' : v.status==='missing' ? 'MISSING' : 'NON-COMPLIANT',
+      ];
+    });
+
+    doc.autoTable({
+      startY: y,
+      head: [['#','Insurance Type','Req. Cover','Submitted','Req. Period','Policy Period','Policy No.','Insurer','Status']],
+      body: rows,
+      theme: 'grid',
+      headStyles: { fillColor:[26,26,26], textColor:255, fontSize:7, fontStyle:'bold', cellPadding:2.5 },
+      bodyStyles: { fontSize:7, cellPadding:2.5 },
+      columnStyles: {
+        0:{cellWidth:6}, 1:{cellWidth:34}, 2:{cellWidth:21}, 3:{cellWidth:21},
+        4:{cellWidth:18}, 5:{cellWidth:18}, 6:{cellWidth:22}, 7:{cellWidth:23}, 8:{cellWidth:20, fontStyle:'bold'},
+      },
+      didParseCell(data) {
+        if (data.column.index === 8) {
+          if (data.cell.raw==='COMPLIANT') data.cell.styles.textColor=[22,101,52];
+          else if (data.cell.raw==='NON-COMPLIANT') data.cell.styles.textColor=[153,27,27];
+          else data.cell.styles.textColor=[133,77,14];
+        }
+      },
+      margin: { left:margin, right:margin },
+    });
+
+    let fy = doc.lastAutoTable.finalY + 8;
+
+    // Issues
+    const hasIssues = reqs.some(r => validate(r, po.poNumber).issues?.length > 0);
+    if (hasIssues) {
+      doc.setFontSize(10); doc.setFont(undefined,'bold'); doc.setTextColor(153,27,27);
+      doc.text('Compliance Issues / Deficiencies:', margin, fy); fy += 5;
+      doc.setFontSize(8); doc.setFont(undefined,'normal'); doc.setTextColor(55,65,81);
+      reqs.forEach(req => {
+        const v = validate(req, po.poNumber);
+        const type = INSURANCE_TYPES.find(t=>t.id===req.typeId);
+        if (v.issues?.length > 0) {
+          doc.setFont(undefined,'bold'); doc.text(`${type?.label}:`, margin+2, fy); fy += 4;
+          doc.setFont(undefined,'normal');
+          v.issues.forEach(issue => { doc.text(`  • ${issue}`, margin+4, fy); fy += 4; });
+        }
+      });
+    }
+
+    // Footer
+    const pc = doc.internal.getNumberOfPages();
+    for (let i=1; i<=pc; i++) {
+      doc.setPage(i);
+      doc.setFillColor(26,26,26); doc.rect(0,287,210,10,'F');
+      doc.setFillColor(180,83,9); doc.rect(0,285.5,210,1.5,'F');
+      doc.setTextColor(255,255,255); doc.setFontSize(7);
+      doc.text('DEWA — Insurance Administration System · Confidential', margin, 293);
+      doc.text(`Page ${i} of ${pc}`, pageW-margin, 293, {align:'right'});
+    }
+
+    doc.save(`DEWA_Insurance_Report_${po.poNumber}.pdf`);
+  }
+
+  return (
+    <>
+      <div className="card">
+        <div className="flex-between">
+          <div className="card-title" style={{margin:0,border:'none',padding:0}}>
+            <div className="title-icon">✅</div> Compliance Validation
+          </div>
+          <div className="form-group" style={{minWidth:280, margin:0}}>
+            <select value={selVendor} onChange={e => { setSelVendor(e.target.value); setSelPO(null); }}>
+              <option value="">— All Vendors —</option>
+              {VENDORS.map(v => <option key={v} value={v}>{v}</option>)}
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div className="card">
+        <div className="card-title"><div className="title-icon">📊</div> Purchase Order Compliance Summary</div>
+        <div className="table-wrap">
+          <table>
+            <thead>
+              <tr><th>PO Number</th><th>Vendor</th><th>Description</th><th>Total</th><th>Compliant</th><th>Non-Compliant</th><th>Missing</th><th>Overall Status</th><th>Actions</th></tr>
+            </thead>
+            <tbody>
+              {filteredPOs.length === 0 && (
+                <tr><td colSpan={9}><div className="empty-state"><p>No POs found.</p></div></td></tr>
+              )}
+              {filteredPOs.map(po => {
+                const s = getSummary(po);
+                return (
+                  <tr key={po.poNumber} style={{background: selPO?.poNumber===po.poNumber ? '#f9fafb' : undefined}}>
+                    <td><strong style={{color:'#1a1a1a'}}>{po.poNumber}</strong></td>
+                    <td style={{color:'#374151'}}>{po.vendor}</td>
+                    <td style={{maxWidth:180, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis', color:'#6b7280', fontSize:12}}>{po.description}</td>
+                    <td><span className="badge badge-dark">{s.total}</span></td>
+                    <td><span className="badge badge-green">{s.compliant}</span></td>
+                    <td><span className="badge badge-red">{s.nonCompliant}</span></td>
+                    <td><span className="badge badge-yellow">{s.missing}</span></td>
+                    <td>
+                      {s.total===0 ? <span className="badge badge-gray">No Requirements</span>
+                        : s.overall==='compliant' ? <span className="badge badge-green">✓ Compliant</span>
+                        : s.overall==='partial'   ? <span className="badge badge-yellow">⚠ Partial</span>
+                        : <span className="badge badge-red">✗ Incomplete</span>}
+                    </td>
+                    <td style={{whiteSpace:'nowrap'}}>
+                      <div className="flex gap-8">
+                        <button className="btn btn-outline btn-sm"
+                          onClick={() => setSelPO(selPO?.poNumber===po.poNumber ? null : po)}>
+                          {selPO?.poNumber===po.poNumber ? '▲ Hide' : '▼ Details'}
+                        </button>
+                        {s.total > 0 && (
+                          <button className="btn btn-gold btn-sm" onClick={() => downloadPDF(po)}>↓ PDF</button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {selPO && (
+        <div className="card">
+          <div className="flex-between mb-16">
+            <div className="card-title" style={{margin:0,border:'none',padding:0}}>
+              <div className="title-icon">🔍</div>
+              Policy Details — {selPO.poNumber} · {selPO.vendor}
+            </div>
+            <button className="btn btn-gold" onClick={() => downloadPDF(selPO)}>↓ Download PDF Report</button>
+          </div>
+
+          {(requirements[selPO.poNumber]||[]).length === 0
+            ? <div className="alert alert-warning">No insurance requirements configured for this PO.</div>
+            : (requirements[selPO.poNumber]||[]).map(req => {
+              const type = INSURANCE_TYPES.find(t=>t.id===req.typeId);
+              const v    = validate(req, selPO.poNumber);
+              return (
+                <div key={req.id} className={`val-row ${v.status}`}>
+                  <div className="flex-between" style={{marginBottom:10}}>
+                    <div style={{display:'flex', alignItems:'center', gap:10}}>
+                      <span style={{fontSize:22}}>{type?.icon}</span>
+                      <strong style={{fontSize:14, color:'#1a1a1a'}}>{type?.label}</strong>
+                    </div>
+                    <span className={`badge ${v.status==='compliant' ? 'badge-green' : v.status==='missing' ? 'badge-yellow' : 'badge-red'}`}>
+                      {v.status==='compliant' ? '✓ Compliant' : v.status==='missing' ? '● Pending Submission' : '⚠ Non-Compliant'}
+                    </span>
+                  </div>
+                  <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:16, fontSize:13}}>
+                    <div style={{background:'rgba(0,0,0,0.03)', borderRadius:6, padding:'10px 12px'}}>
+                      <p style={{fontSize:10, fontWeight:700, color:'#6b7280', textTransform:'uppercase', letterSpacing:'0.5px', marginBottom:6}}>DEWA Requirement</p>
+                      <p>Cover: <strong>{fmt(req.amount)}</strong></p>
+                      <p style={{color:'#6b7280', fontSize:12}}>Period: {req.startDate} → {req.endDate}</p>
+                    </div>
+                    <div style={{background:'rgba(0,0,0,0.03)', borderRadius:6, padding:'10px 12px'}}>
+                      <p style={{fontSize:10, fontWeight:700, color:'#6b7280', textTransform:'uppercase', letterSpacing:'0.5px', marginBottom:6}}>Submitted Policy</p>
+                      {v.sub ? (
+                        <>
+                          <p>Cover: <strong style={{color: parseFloat(v.sub.coverAmount)>=req.amount ? '#166534' : '#991b1b'}}>{fmt(parseFloat(v.sub.coverAmount))}</strong></p>
+                          <p style={{fontSize:12, color: new Date(v.sub.validFrom)<=new Date(req.startDate)&&new Date(v.sub.validTo)>=new Date(req.endDate) ? '#166534' : '#991b1b'}}>Period: {v.sub.validFrom} → {v.sub.validTo}</p>
+                          <p style={{fontSize:12, color:'#374151'}}>Policy #: {v.sub.policyNumber} · {v.sub.insurer}</p>
+                          {v.sub.fileName && <p style={{marginTop:4}}><span className="file-chip" style={{cursor:'default'}}>📄 {v.sub.fileName}</span></p>}
+                        </>
+                      ) : <p style={{color:'#9ca3af', fontSize:12}}>Not yet submitted</p>}
+                    </div>
+                  </div>
+                  {v.issues?.length > 0 && (
+                    <div className="alert alert-error" style={{marginTop:10}}>
+                      <div>
+                        <strong>Deficiencies:</strong>
+                        <ul style={{margin:'4px 0 0 16px', padding:0}}>
+                          {v.issues.map((issue, i) => <li key={i} style={{fontSize:12}}>{issue}</li>)}
+                        </ul>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })
+          }
+        </div>
+      )}
+    </>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

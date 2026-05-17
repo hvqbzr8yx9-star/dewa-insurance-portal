@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(xargs kill -9)",
+      "Bash(python3 -m http.server 8080)",
+      "mcp__Claude_in_Chrome__tabs_context_mcp",
+      "Bash(curl -s http://localhost:8080/index.html)",
+      "Bash(open http://localhost:8080/index.html)",
+      "Bash(gh auth *)",
+      "Bash(gh api *)",
+      "Bash(git --version)",
+      "Bash(git config *)",
+      "Read(//Users/jrr/**)",
+      "Bash(git init *)",
+      "Bash(git add *)"
+    ]
+  }
+}

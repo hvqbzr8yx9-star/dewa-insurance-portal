@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DEWA — Admin Panel</title>
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', sans-serif; background: #f2f3f5; color: #1a1a1a; min-height: 100vh; }
+
+    /* ── Shared DEWA header ── */
+    .gov-bar {
+      background: linear-gradient(135deg, #111 0%, #2a2a2a 50%, #111 100%);
+      padding: 10px 40px; display: flex; align-items: center; justify-content: space-between;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .gov-crest { display: flex; align-items: center; gap: 10px; }
+    .gov-crest-icon { width: 44px; height: 44px; border: 1.5px solid rgba(255,255,255,0.5); border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+    .gov-crest-icon svg { width: 32px; height: 32px; }
+    .gov-crest-text { color: rgba(255,255,255,0.9); }
+    .gov-crest-text .ar { font-size: 11px; }
+    .gov-crest-text .en { font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase; opacity: 0.7; }
+    .dewa-brand { display: flex; align-items: center; gap: 12px; }
+    .dewa-brand-text { text-align: right; color: rgba(255,255,255,0.9); }
+    .dewa-brand-text .ar { font-size: 13px; }
+    .dewa-brand-text .en { font-size: 9px; letter-spacing: 1px; text-transform: uppercase; opacity: 0.7; }
+    .dewa-circle { width: 42px; height: 42px; border: 2px solid rgba(255,255,255,0.6); border-radius: 50%; display: flex; align-items: center; justify-content: center; position: relative; }
+    .dewa-circle-inner { width: 28px; height: 28px; border: 1.5px solid rgba(255,255,255,0.4); border-radius: 50%; }
+    .dewa-circle::after { content: ''; position: absolute; width: 6px; height: 20px; background: rgba(255,255,255,0.7); border-radius: 3px; top: 50%; transform: translateY(-50%); }
+
+    .nav-bar {
+      background: linear-gradient(180deg, #1c1c1c 0%, #2c2c2c 100%);
+      padding: 0 40px; display: flex; align-items: center; justify-content: space-between;
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+    }
+    .nav-links { display: flex; }
+    .nav-link { color: rgba(255,255,255,0.7); font-size: 13px; font-weight: 500; padding: 15px 20px; text-decoration: none; transition: color 0.2s; }
+    .nav-link:hover { color: white; }
+    .nav-link.active { color: white; border-bottom: 3px solid white; }
+    .nav-right { display: flex; align-items: center; gap: 12px; }
+    .admin-badge { background: rgba(180,83,9,0.3); border: 1px solid rgba(180,83,9,0.6); color: #fbbf24; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 10px; letter-spacing: 0.5px; }
+    .logout-btn { background: none; border: 1px solid rgba(255,255,255,0.2); color: rgba(255,255,255,0.7); font-size: 12px; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-family: inherit; transition: all 0.2s; }
+    .logout-btn:hover { background: rgba(255,255,255,0.1); color: white; }
+
+    .page-banner { background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 60%, #1a1a1a 100%); padding: 22px 40px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    .page-banner h2 { color: white; font-size: 18px; font-weight: 600; }
+    .page-banner p { color: rgba(255,255,255,0.5); font-size: 12px; margin-top: 3px; }
+
+    /* ── Login overlay ── */
+    #loginOverlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+      display: flex; align-items: center; justify-content: center; z-index: 1000;
+      backdrop-filter: blur(4px);
+    }
+    .login-box { background: white; border-radius: 12px; width: 360px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.4); }
+    .login-box-header { background: #1a1a1a; padding: 24px; text-align: center; }
+    .login-box-header .lock-icon { font-size: 32px; margin-bottom: 8px; }
+    .login-box-header h3 { color: white; font-size: 16px; font-weight: 700; }
+    .login-box-header p { color: rgba(255,255,255,0.5); font-size: 12px; margin-top: 4px; }
+    .login-box-body { padding: 24px; }
+    .login-field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+    .login-field label { font-size: 11px; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.6px; }
+    .login-field input { border: 1.5px solid #e5e7eb; border-radius: 6px; padding: 10px 12px; font-size: 14px; font-family: inherit; transition: all 0.18s; }
+    .login-field input:focus { outline: none; border-color: #1a1a1a; box-shadow: 0 0 0 3px rgba(26,26,26,0.08); }
+    .login-error { color: #991b1b; font-size: 12px; margin-bottom: 12px; display: none; }
+    .login-btn { width: 100%; padding: 11px; background: #1a1a1a; color: white; border: none; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; transition: background 0.18s; }
+    .login-btn:hover { background: #333; }
+
+    /* ── Main layout ── */
+    #mainContent { display: none; }
+    .container { padding: 28px 40px; max-width: 1300px; margin: 0 auto; }
+
+    /* ── Stats ── */
+    .stats-bar { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+    .stat-card { background: white; border-radius: 8px; box-shadow: 0 1px 4px rgba(0,0,0,0.07); padding: 18px 20px; display: flex; align-items: center; gap: 14px; }
+    .stat-icon { width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+    .stat-num { font-size: 24px; font-weight: 700; color: #1a1a1a; line-height: 1; }
+    .stat-label { font-size: 11px; color: #6b7280; margin-top: 3px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.4px; }
+
+    /* ── Tabs ── */
+    .tab-strip { background: white; border-bottom: 1px solid #e5e7eb; display: flex; margin-bottom: 20px; border-radius: 8px 8px 0 0; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+    .tab-btn { padding: 14px 22px; cursor: pointer; font-size: 13px; font-weight: 500; color: #6b7280; border-bottom: 3px solid transparent; transition: all 0.2s; display: flex; align-items: center; gap: 7px; white-space: nowrap; }
+    .tab-btn:hover { color: #1a1a1a; }
+    .tab-btn.active { color: #1a1a1a; border-bottom-color: #1a1a1a; font-weight: 600; }
+
+    /* ── Cards ── */
+    .card { background: white; border-radius: 8px; box-shadow: 0 1px 4px rgba(0,0,0,0.07); padding: 24px; margin-bottom: 20px; }
+    .card-title { font-size: 14px; font-weight: 700; color: #1a1a1a; margin-bottom: 18px; display: flex; align-items: center; gap: 8px; padding-bottom: 14px; border-bottom: 1px solid #f0f0f0; }
+    .title-icon { width: 28px; height: 28px; border-radius: 6px; background: #1a1a1a; color: white; display: flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; }
+
+    /* ── Form elements ── */
+    .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    .form-group label { font-size: 11px; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.6px; }
+    .form-group input, .form-group select, .form-group textarea {
+      border: 1.5px solid #e5e7eb; border-radius: 6px; padding: 9px 12px;
+      font-size: 13px; color: #1a1a1a; font-family: inherit; background: #fafafa; transition: all 0.18s;
+    }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+      outline: none; border-color: #1a1a1a; background: white; box-shadow: 0 0 0 3px rgba(26,26,26,0.08);
+    }
+    .form-group textarea { resize: vertical; min-height: 80px; }
+
+    /* ── Code display ── */
+    .code-display { background: #f3f4f6; border: 1.5px solid #e5e7eb; border-radius: 6px; padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; margin-top: 8px; }
+    .code-display .code { font-family: monospace; font-size: 18px; font-weight: 700; color: #1a1a1a; letter-spacing: 2px; }
+    .copy-btn { font-size: 11px; font-weight: 600; color: #6b7280; background: white; border: 1px solid #e5e7eb; border-radius: 4px; padding: 4px 10px; cursor: pointer; transition: all 0.18s; }
+    .copy-btn:hover { background: #f9fafb; color: #1a1a1a; }
+
+    /* ── Buttons ── */
+    .btn { padding: 9px 18px; border-radius: 6px; border: none; cursor: pointer; font-size: 13px; font-weight: 600; transition: all 0.18s; display: inline-flex; align-items: center; gap: 6px; font-family: inherit; }
+    .btn-primary { background: #1a1a1a; color: white; }
+    .btn-primary:hover { background: #333; }
+    .btn-success { background: #166534; color: white; }
+    .btn-success:hover { background: #15803d; }
+    .btn-danger { background: #991b1b; color: white; }
+    .btn-danger:hover { background: #b91c1c; }
+    .btn-gold { background: #b45309; color: white; }
+    .btn-gold:hover { background: #d97706; }
+    .btn-outline { background: transparent; color: #1a1a1a; border: 1.5px solid #d1d5db; }
+    .btn-outline:hover { background: #f9fafb; }
+    .btn-sm { padding: 5px 12px; font-size: 12px; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* ── Table ── */
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th { background: #1a1a1a; color: white; padding: 11px 14px; text-align: left; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.7px; }
+    th:first-child { border-radius: 6px 0 0 0; }
+    th:last-child { border-radius: 0 6px 0 0; }
+    td { padding: 11px 14px; border-bottom: 1px solid #f3f4f6; vertical-align: middle; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #fafafa; }
+    .table-wrap { overflow-x: auto; border-radius: 8px; border: 1px solid #e5e7eb; }
+
+    /* ── Badge ── */
+    .badge { display: inline-block; padding: 3px 9px; border-radius: 10px; font-size: 11px; font-weight: 700; }
+    .badge-green { background: #dcfce7; color: #166534; }
+    .badge-red { background: #fee2e2; color: #991b1b; }
+    .badge-yellow { background: #fef9c3; color: #854d0e; }
+    .badge-gray { background: #f3f4f6; color: #4b5563; }
+
+    /* ── Alert ── */
+    .alert { padding: 12px 16px; border-radius: 6px; font-size: 13px; margin-bottom: 16px; }
+    .alert-info { background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; }
+    .alert-success { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
+    .alert-warning { background: #fffbeb; color: #92400e; border: 1px solid #fde68a; }
+
+    /* ── Misc ── */
+    .flex-end { display: flex; justify-content: flex-end; gap: 8px; }
+    .flex-between { display: flex; justify-content: space-between; align-items: center; }
+    .mt-16 { margin-top: 16px; }
+    .empty-state { text-align: center; padding: 40px; color: #9ca3af; }
+    .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 0.7s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .action-msg { font-size: 12px; margin-top: 8px; padding: 8px 12px; border-radius: 6px; display: none; }
+    .action-msg.show { display: block; }
+    .action-msg.ok { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
+    .action-msg.err { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+
+    @media (max-width: 900px) {
+      .gov-bar, .nav-bar, .page-banner, .container { padding-left: 20px; padding-right: 20px; }
+      .stats-bar { grid-template-columns: repeat(2,1fr); }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── Government Top Bar ── -->
+<div class="gov-bar">
+  <div class="gov-crest">
+    <div class="gov-crest-icon">
+      <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M32 6 L38 18 L52 20 L42 30 L44 44 L32 38 L20 44 L22 30 L12 20 L26 18 Z" fill="none" stroke="rgba(255,255,255,0.85)" stroke-width="2"/>
+        <circle cx="32" cy="32" r="10" fill="none" stroke="rgba(255,255,255,0.6)" stroke-width="1.5"/>
+        <path d="M28 26 L28 38 M36 26 L36 38 M24 32 L40 32" stroke="rgba(255,255,255,0.7)" stroke-width="1.2" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div class="gov-crest-text">
+      <div class="ar" style="font-family:Arial;direction:rtl">حكومة دبـي</div>
+      <div class="en">GOVERNMENT OF DUBAI</div>
+    </div>
+  </div>
+  <div class="dewa-brand">
+    <div class="dewa-brand-text">
+      <div class="ar" style="font-family:Arial;direction:rtl">هيئة كهرباء ومياه دبي</div>
+      <div class="en">Dubai Electricity &amp; Water Authority</div>
+    </div>
+    <div class="dewa-circle"><div class="dewa-circle-inner"></div></div>
+  </div>
+</div>
+
+<!-- ── Nav Bar ── -->
+<div class="nav-bar">
+  <div class="nav-links">
+    <a class="nav-link" href="index.html">Vendor Portal</a>
+    <span class="nav-link active">Admin Panel</span>
+  </div>
+  <div class="nav-right">
+    <span class="admin-badge">🔒 ADMIN</span>
+    <button class="logout-btn" onclick="logout()">Sign Out</button>
+  </div>
+</div>
+
+<!-- ── Page Banner ── -->
+<div class="page-banner">
+  <h2>Admin Dashboard — Access Management</h2>
+  <p>Review vendor access requests · Approve or reject · Send notifications</p>
+</div>
+
+<!-- ── Login Overlay ── -->
+<div id="loginOverlay">
+  <div class="login-box">
+    <div class="login-box-header">
+      <div class="lock-icon">🔐</div>
+      <h3>Admin Access</h3>
+      <p>DEWA Insurance Administration</p>
+    </div>
+    <div class="login-box-body">
+      <div class="login-field">
+        <label>Admin Password</label>
+        <input type="password" id="adminPasswordInput" placeholder="Enter admin password" onkeydown="if(event.key==='Enter') doAdminLogin()" />
+      </div>
+      <div class="login-error" id="loginError">⚠ Incorrect password. Please try again.</div>
+      <button class="login-btn" onclick="doAdminLogin()">Access Admin Panel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Main Content ── -->
+<div id="mainContent">
+  <div class="container">
+
+    <!-- Stats -->
+    <div class="stats-bar">
+      <div class="stat-card">
+        <div class="stat-icon" style="background:#f3f4f6">📥</div>
+        <div><div class="stat-num" id="statTotal">0</div><div class="stat-label">Total Requests</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background:#fef9c3">⏳</div>
+        <div><div class="stat-num" id="statPending">0</div><div class="stat-label">Pending Review</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background:#dcfce7">✅</div>
+        <div><div class="stat-num" id="statApproved">0</div><div class="stat-label">Approved</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background:#fee2e2">❌</div>
+        <div><div class="stat-num" id="statRejected">0</div><div class="stat-label">Rejected</div></div>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tab-strip">
+      <div class="tab-btn active" onclick="switchTab('add')" id="tab-add">➕ Add / Review Request</div>
+      <div class="tab-btn" onclick="switchTab('approved')" id="tab-approved">✅ Approved Vendors</div>
+      <div class="tab-btn" onclick="switchTab('rejected')" id="tab-rejected">❌ Rejected</div>
+      <div class="tab-btn" onclick="switchTab('settings')" id="tab-settings">⚙️ Settings</div>
+    </div>
+
+    <!-- ══ TAB: Add / Review ══ -->
+    <div id="pane-add">
+      <div class="alert alert-info">
+        📧 When a vendor submits a request, you receive an email with their details. Enter those details below to generate their access code and send an approval or rejection email.
+      </div>
+
+      <div class="card">
+        <div class="card-title"><div class="title-icon">👤</div> Vendor Request Details</div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Full Name *</label>
+            <input type="text" id="aVendorName" placeholder="From the request email" />
+          </div>
+          <div class="form-group">
+            <label>Company *</label>
+            <input type="text" id="aVendorCompany" placeholder="Vendor company name" />
+          </div>
+          <div class="form-group">
+            <label>Email Address *</label>
+            <input type="email" id="aVendorEmail" placeholder="vendor@company.ae"
+              oninput="onEmailChange()" />
+          </div>
+          <div class="form-group">
+            <label>Phone</label>
+            <input type="text" id="aVendorPhone" placeholder="+971 50 000 0000" />
+          </div>
+          <div class="form-group">
+            <label>PO / Contract Ref</label>
+            <input type="text" id="aVendorPO" placeholder="e.g. PO-2024-001" />
+          </div>
+          <div class="form-group">
+            <label>Date of Request</label>
+            <input type="date" id="aVendorDate" />
+          </div>
+        </div>
+
+        <!-- Generated Access Code -->
+        <div style="margin-top:20px; padding:16px; background:#f9fafb; border:1px solid #e5e7eb; border-radius:8px;">
+          <p style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">
+            🔑 Generated Access Code (auto-computed from vendor email)
+          </p>
+          <div class="code-display">
+            <span class="code" id="generatedCode">— — — —</span>
+            <button class="copy-btn" onclick="copyCode()">Copy</button>
+          </div>
+          <p style="font-size:11px;color:#9ca3af;margin-top:8px;">This code is uniquely tied to the vendor's email address. Enter the email above to generate it.</p>
+        </div>
+
+        <!-- Action Buttons -->
+        <div style="margin-top:20px; display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+          <!-- Approve -->
+          <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:16px;">
+            <p style="font-size:12px;font-weight:700;color:#166534;margin-bottom:8px;">✅ Approve Access</p>
+            <p style="font-size:12px;color:#4b7c59;margin-bottom:12px;line-height:1.5;">
+              Sends an approval email to the vendor with their login credentials and access code.
+            </p>
+            <button class="btn btn-success" style="width:100%;justify-content:center" onclick="approveVendor()" id="approveBtn">
+              ✅ Approve &amp; Send Email
+            </button>
+            <div class="action-msg" id="approveMsg"></div>
+          </div>
+          <!-- Reject -->
+          <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:16px;">
+            <p style="font-size:12px;font-weight:700;color:#991b1b;margin-bottom:8px;">❌ Reject Request</p>
+            <div class="form-group" style="margin-bottom:10px;">
+              <label>Reason for Rejection</label>
+              <textarea id="rejectionReason" rows="2" placeholder="e.g. Vendor not registered with DEWA / Incomplete documentation…"></textarea>
+            </div>
+            <button class="btn btn-danger" style="width:100%;justify-content:center" onclick="rejectVendor()" id="rejectBtn">
+              ❌ Reject &amp; Send Email
+            </button>
+            <div class="action-msg" id="rejectMsg"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ TAB: Approved ══ -->
+    <div id="pane-approved" style="display:none">
+      <div class="card">
+        <div class="flex-between" style="margin-bottom:16px;">
+          <div class="card-title" style="margin:0;border:none;padding:0"><div class="title-icon">✅</div> Approved Vendors</div>
+          <button class="btn btn-outline btn-sm" onclick="exportCSV()">↓ Export CSV</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>#</th><th>Name</th><th>Company</th><th>Email</th><th>Access Code</th><th>Approved On</th><th>Action</th></tr></thead>
+            <tbody id="approvedTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ TAB: Rejected ══ -->
+    <div id="pane-rejected" style="display:none">
+      <div class="card">
+        <div class="card-title"><div class="title-icon">❌</div> Rejected Requests</div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>#</th><th>Name</th><th>Company</th><th>Email</th><th>Reason</th><th>Rejected On</th><th>Action</th></tr></thead>
+            <tbody id="rejectedTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ TAB: Settings ══ -->
+    <div id="pane-settings" style="display:none">
+      <div class="card">
+        <div class="card-title"><div class="title-icon">⚙️</div> EmailJS Configuration</div>
+        <div class="alert alert-warning" style="margin-bottom:20px;">
+          ⚠️ EmailJS must be configured for approval and rejection emails to be sent automatically. Follow the steps below.
+        </div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>EmailJS Public Key</label>
+            <input type="text" id="cfgPublicKey" placeholder="e.g. abc123XYZ..." />
+          </div>
+          <div class="form-group">
+            <label>EmailJS Service ID</label>
+            <input type="text" id="cfgServiceId" placeholder="e.g. service_xxxxxx" />
+          </div>
+          <div class="form-group">
+            <label>Approval Template ID</label>
+            <input type="text" id="cfgTplApprove" placeholder="e.g. template_approve" />
+          </div>
+          <div class="form-group">
+            <label>Rejection Template ID</label>
+            <input type="text" id="cfgTplReject" placeholder="e.g. template_reject" />
+          </div>
+          <div class="form-group">
+            <label>Request Notify Template ID</label>
+            <input type="text" id="cfgTplRequest" placeholder="e.g. template_request" />
+          </div>
+          <div class="form-group">
+            <label>Portal URL (GitHub Pages URL)</label>
+            <input type="text" id="cfgPortalUrl" placeholder="e.g. https://username.github.io/Admin_Insurance/" />
+          </div>
+        </div>
+        <div class="flex-end mt-16">
+          <button class="btn btn-primary" onclick="saveSettings()">💾 Save Settings</button>
+        </div>
+        <div class="action-msg" id="settingsMsg" style="margin-top:12px;"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><div class="title-icon">📋</div> EmailJS Setup Guide</div>
+        <ol style="padding-left:20px;line-height:2;font-size:13px;color:#374151;">
+          <li>Go to <strong>emailjs.com</strong> and create a free account.</li>
+          <li>Under <strong>Email Services</strong>, add your Gmail account (<em>jrraman@gmail.com</em>) and note the Service ID.</li>
+          <li>Under <strong>Email Templates</strong>, create three templates:</li>
+        </ol>
+        <div style="margin:14px 0 14px 20px;display:grid;gap:10px;">
+          <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;padding:12px;">
+            <strong style="font-size:12px;color:#1a1a1a;">Template 1 — Request Notification (to you)</strong>
+            <p style="font-size:12px;color:#6b7280;margin-top:4px;line-height:1.6;">
+              Subject: <code>New Vendor Access Request – {{vendor_company}}</code><br/>
+              Body: Name: <code>{{vendor_name}}</code>, Email: <code>{{vendor_email}}</code>, Company: <code>{{vendor_company}}</code>, Reason: <code>{{vendor_reason}}</code><br/>
+              To: <code>jrraman@gmail.com</code>
+            </p>
+          </div>
+          <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;padding:12px;">
+            <strong style="font-size:12px;color:#1a1a1a;">Template 2 — Approval (to vendor)</strong>
+            <p style="font-size:12px;color:#6b7280;margin-top:4px;line-height:1.6;">
+              Subject: <code>DEWA Portal – Access Approved ✅</code><br/>
+              Body: Dear <code>{{vendor_name}}</code>, your access has been approved.<br/>
+              Login URL: <code>{{portal_url}}</code> · Email: <code>{{vendor_email}}</code> · Access Code: <code>{{access_code}}</code><br/>
+              To: <code>{{to_email}}</code>
+            </p>
+          </div>
+          <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;padding:12px;">
+            <strong style="font-size:12px;color:#1a1a1a;">Template 3 — Rejection (to vendor)</strong>
+            <p style="font-size:12px;color:#6b7280;margin-top:4px;line-height:1.6;">
+              Subject: <code>DEWA Portal – Access Request Update</code><br/>
+              Body: Dear <code>{{vendor_name}}</code>, your request has been declined. Reason: <code>{{rejection_reason}}</code><br/>
+              To: <code>{{to_email}}</code>
+            </p>
+          </div>
+        </div>
+        <ol start="4" style="padding-left:20px;line-height:2;font-size:13px;color:#374151;">
+          <li>Copy your <strong>Public Key</strong> from the Account section.</li>
+          <li>Enter all IDs in the Settings form above and click <strong>Save Settings</strong>.</li>
+        </ol>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><div class="title-icon">🔑</div> Change Admin Password</div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Current Password</label>
+            <input type="password" id="curPwd" placeholder="Current admin password" />
+          </div>
+          <div class="form-group">
+            <label>New Password</label>
+            <input type="password" id="newPwd" placeholder="New password (min 8 chars)" />
+          </div>
+        </div>
+        <div class="flex-end mt-16">
+          <button class="btn btn-primary" onclick="changePwd()">Update Password</button>
+        </div>
+        <div class="action-msg" id="pwdMsg" style="margin-top:12px;"></div>
+      </div>
+    </div>
+
+  </div><!-- /container -->
+</div><!-- /mainContent -->
+
+<script>
+// ── Constants ────────────────────────────────────────────────────────────
+const DEFAULT_ADMIN_PWD = 'DEWA@Admin2024';  // change via Settings tab after first login
+
+// ── Access-code algorithm (must match index.html exactly) ────────────────
+function generateAccessCode(email) {
+  const secret = 'DEWA-INSURANCE-2024-SECURE';
+  const str = email.toLowerCase().trim() + '::' + secret;
+  let h = 5381;
+  for (let i = 0; i < str.length; i++) {
+    h = Math.imul(31, h) + str.charCodeAt(i) | 0;
+  }
+  const raw = Math.abs(h).toString(36).toUpperCase().padStart(8, '0').slice(0, 8);
+  return raw.slice(0, 4) + '-' + raw.slice(4);
+}
+
+// ── EmailJS helpers ──────────────────────────────────────────────────────
+function cfg() { return JSON.parse(localStorage.getItem('dewaAdminCfg') || '{}'); }
+function initEjs() {
+  const c = cfg();
+  if (c.publicKey) emailjs.init(c.publicKey);
+}
+initEjs();
+
+// ── Auth ─────────────────────────────────────────────────────────────────
+function getAdminPwd() { return localStorage.getItem('dewaAdminPwd') || DEFAULT_ADMIN_PWD; }
+
+function doAdminLogin() {
+  const val = document.getElementById('adminPasswordInput').value;
+  if (val === getAdminPwd()) {
+    sessionStorage.setItem('dewaAdminAuth', '1');
+    document.getElementById('loginOverlay').style.display = 'none';
+    document.getElementById('mainContent').style.display  = 'block';
+    loadSettings(); refreshStats(); renderApproved(); renderRejected();
+    document.getElementById('aVendorDate').value = new Date().toISOString().split('T')[0];
+  } else {
+    document.getElementById('loginError').style.display = 'block';
+  }
+}
+
+function logout() {
+  sessionStorage.removeItem('dewaAdminAuth');
+  location.reload();
+}
+
+// Auto-login if session persists
+if (sessionStorage.getItem('dewaAdminAuth') === '1') {
+  document.getElementById('loginOverlay').style.display = 'none';
+  document.getElementById('mainContent').style.display  = 'block';
+  loadSettings(); refreshStats(); renderApproved(); renderRejected();
+  document.getElementById('aVendorDate').value = new Date().toISOString().split('T')[0];
+}
+
+document.getElementById('adminPasswordInput').focus();
+
+// ── Tab switching ─────────────────────────────────────────────────────────
+const panes = ['add','approved','rejected','settings'];
+function switchTab(name) {
+  panes.forEach(p => {
+    document.getElementById('pane-' + p).style.display = p === name ? 'block' : 'none';
+    document.getElementById('tab-'  + p).classList.toggle('active', p === name);
+  });
+  if (name === 'approved') renderApproved();
+  if (name === 'rejected') renderRejected();
+}
+
+// ── Vendor data ───────────────────────────────────────────────────────────
+function getApproved() { return JSON.parse(localStorage.getItem('dewaApproved') || '[]'); }
+function getRejected()  { return JSON.parse(localStorage.getItem('dewaRejected')  || '[]'); }
+function saveApproved(d) { localStorage.setItem('dewaApproved', JSON.stringify(d)); }
+function saveRejected(d) { localStorage.setItem('dewaRejected',  JSON.stringify(d)); }
+
+function refreshStats() {
+  const a = getApproved(), r = getRejected();
+  document.getElementById('statApproved').textContent = a.length;
+  document.getElementById('statRejected').textContent  = r.length;
+  document.getElementById('statPending').textContent   = 0;
+  document.getElementById('statTotal').textContent     = a.length + r.length;
+}
+
+// ── Email field → auto-generate code ─────────────────────────────────────
+function onEmailChange() {
+  const email = document.getElementById('aVendorEmail').value.trim();
+  document.getElementById('generatedCode').textContent = email ? generateAccessCode(email) : '— — — —';
+}
+
+function copyCode() {
+  const code = document.getElementById('generatedCode').textContent;
+  if (code === '— — — —') return;
+  navigator.clipboard.writeText(code);
+  const btn = document.querySelector('.copy-btn');
+  btn.textContent = '✓ Copied';
+  setTimeout(() => btn.textContent = 'Copy', 1800);
+}
+
+// ── Approve ───────────────────────────────────────────────────────────────
+async function approveVendor() {
+  const name    = document.getElementById('aVendorName').value.trim();
+  const company = document.getElementById('aVendorCompany').value.trim();
+  const email   = document.getElementById('aVendorEmail').value.trim();
+  const phone   = document.getElementById('aVendorPhone').value.trim();
+  const po      = document.getElementById('aVendorPO').value.trim();
+  const date    = document.getElementById('aVendorDate').value;
+
+  if (!name || !company || !email) {
+    showMsg('approveMsg', 'Please enter Name, Company and Email.', false); return;
+  }
+
+  const code = generateAccessCode(email);
+  const btn  = document.getElementById('approveBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Sending…';
+
+  const c = cfg();
+  try {
+    if (c.serviceId && c.tplApprove) {
+      await emailjs.send(c.serviceId, c.tplApprove, {
+        to_email:     email,
+        vendor_name:  name,
+        vendor_email: email,
+        access_code:  code,
+        portal_url:   c.portalUrl || window.location.origin + window.location.pathname.replace('admin.html','index.html'),
+      });
+    }
+  } catch(e) { console.warn('EmailJS error (demo mode):', e); }
+
+  // Save to approved list
+  const list = getApproved();
+  const existing = list.findIndex(v => v.email === email);
+  const record = { name, company, email, phone, po, code, approvedOn: new Date().toLocaleDateString('en-AE') };
+  if (existing >= 0) list[existing] = record; else list.push(record);
+  saveApproved(list);
+
+  btn.disabled = false;
+  btn.innerHTML = '✅ Approve &amp; Send Email';
+  refreshStats();
+
+  const emailSent = c.serviceId && c.tplApprove;
+  showMsg('approveMsg',
+    emailSent
+      ? `✅ Approved! Email sent to ${email} with code ${code}.`
+      : `✅ Approved (demo mode — EmailJS not configured). Code: ${code}`,
+    true);
+  clearForm();
+}
+
+// ── Reject ────────────────────────────────────────────────────────────────
+async function rejectVendor() {
+  const name    = document.getElementById('aVendorName').value.trim();
+  const company = document.getElementById('aVendorCompany').value.trim();
+  const email   = document.getElementById('aVendorEmail').value.trim();
+  const reason  = document.getElementById('rejectionReason').value.trim();
+
+  if (!name || !company || !email) {
+    showMsg('rejectMsg', 'Please enter Name, Company and Email.', false); return;
+  }
+  if (!reason) {
+    showMsg('rejectMsg', 'Please enter a reason for rejection.', false); return;
+  }
+
+  const btn = document.getElementById('rejectBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Sending…';
+
+  const c = cfg();
+  try {
+    if (c.serviceId && c.tplReject) {
+      await emailjs.send(c.serviceId, c.tplReject, {
+        to_email:         email,
+        vendor_name:      name,
+        rejection_reason: reason,
+      });
+    }
+  } catch(e) { console.warn('EmailJS error (demo mode):', e); }
+
+  const list = getRejected();
+  list.push({ name, company, email, reason, rejectedOn: new Date().toLocaleDateString('en-AE') });
+  saveRejected(list);
+
+  btn.disabled = false;
+  btn.innerHTML = '❌ Reject &amp; Send Email';
+  refreshStats();
+
+  const emailSent = c.serviceId && c.tplReject;
+  showMsg('rejectMsg',
+    emailSent
+      ? `❌ Rejected. Notification email sent to ${email}.`
+      : `❌ Rejected (demo mode — EmailJS not configured).`,
+    true);
+  clearForm();
+}
+
+// ── Render tables ─────────────────────────────────────────────────────────
+function renderApproved() {
+  const list = getApproved();
+  const tbody = document.getElementById('approvedTableBody');
+  if (list.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state">No approved vendors yet.</div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = list.map((v, i) => `
+    <tr>
+      <td style="color:#9ca3af;font-weight:600">${i+1}</td>
+      <td><strong>${v.name}</strong></td>
+      <td style="color:#6b7280">${v.company}</td>
+      <td>${v.email}</td>
+      <td><code style="background:#f3f4f6;padding:3px 8px;border-radius:4px;font-size:12px;font-weight:700;letter-spacing:1px">${v.code}</code></td>
+      <td style="font-size:12px;color:#6b7280">${v.approvedOn}</td>
+      <td>
+        <button class="btn btn-danger btn-sm" onclick="revokeAccess(${i})">Revoke</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function renderRejected() {
+  const list = getRejected();
+  const tbody = document.getElementById('rejectedTableBody');
+  if (list.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state">No rejected requests yet.</div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = list.map((v, i) => `
+    <tr>
+      <td style="color:#9ca3af;font-weight:600">${i+1}</td>
+      <td><strong>${v.name}</strong></td>
+      <td style="color:#6b7280">${v.company}</td>
+      <td>${v.email}</td>
+      <td style="font-size:12px;color:#6b7280;max-width:200px">${v.reason}</td>
+      <td style="font-size:12px;color:#6b7280">${v.rejectedOn}</td>
+      <td>
+        <button class="btn btn-success btn-sm" onclick="reconsider(${i})">Reconsider</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function revokeAccess(i) {
+  if (!confirm('Revoke access for this vendor? They will no longer be able to log in.')) return;
+  const list = getApproved(); list.splice(i, 1); saveApproved(list);
+  renderApproved(); refreshStats();
+}
+
+function reconsider(i) {
+  const list = getRejected();
+  const v = list[i];
+  document.getElementById('aVendorName').value    = v.name;
+  document.getElementById('aVendorCompany').value = v.company;
+  document.getElementById('aVendorEmail').value   = v.email;
+  onEmailChange();
+  list.splice(i, 1); saveRejected(list);
+  renderRejected(); refreshStats();
+  switchTab('add');
+}
+
+// ── Settings ──────────────────────────────────────────────────────────────
+function loadSettings() {
+  const c = cfg();
+  document.getElementById('cfgPublicKey').value  = c.publicKey  || '';
+  document.getElementById('cfgServiceId').value  = c.serviceId  || '';
+  document.getElementById('cfgTplApprove').value = c.tplApprove || 'template_approve';
+  document.getElementById('cfgTplReject').value  = c.tplReject  || 'template_reject';
+  document.getElementById('cfgTplRequest').value = c.tplRequest || 'template_request';
+  document.getElementById('cfgPortalUrl').value  = c.portalUrl  || '';
+}
+
+function saveSettings() {
+  const c = {
+    publicKey:  document.getElementById('cfgPublicKey').value.trim(),
+    serviceId:  document.getElementById('cfgServiceId').value.trim(),
+    tplApprove: document.getElementById('cfgTplApprove').value.trim(),
+    tplReject:  document.getElementById('cfgTplReject').value.trim(),
+    tplRequest: document.getElementById('cfgTplRequest').value.trim(),
+    portalUrl:  document.getElementById('cfgPortalUrl').value.trim(),
+  };
+  localStorage.setItem('dewaAdminCfg', JSON.stringify(c));
+  if (c.publicKey) emailjs.init(c.publicKey);
+  showMsg('settingsMsg', '✅ Settings saved successfully.', true);
+}
+
+function changePwd() {
+  const cur = document.getElementById('curPwd').value;
+  const nw  = document.getElementById('newPwd').value;
+  if (cur !== getAdminPwd()) { showMsg('pwdMsg', '⚠ Current password is incorrect.', false); return; }
+  if (nw.length < 8) { showMsg('pwdMsg', '⚠ New password must be at least 8 characters.', false); return; }
+  localStorage.setItem('dewaAdminPwd', nw);
+  showMsg('pwdMsg', '✅ Password updated successfully.', true);
+  document.getElementById('curPwd').value = '';
+  document.getElementById('newPwd').value = '';
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────
+function clearForm() {
+  ['aVendorName','aVendorCompany','aVendorEmail','aVendorPhone','aVendorPO','rejectionReason'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('generatedCode').textContent = '— — — —';
+}
+
+function showMsg(id, text, ok) {
+  const el = document.getElementById(id);
+  el.textContent = text;
+  el.className   = 'action-msg show ' + (ok ? 'ok' : 'err');
+  setTimeout(() => el.classList.remove('show'), 6000);
+}
+
+function exportCSV() {
+  const list = getApproved();
+  if (!list.length) { alert('No approved vendors to export.'); return; }
+  const header = 'Name,Company,Email,Access Code,Approved On\n';
+  const rows   = list.map(v => `"${v.name}","${v.company}","${v.email}","${v.code}","${v.approvedOn}"`).join('\n');
+  const blob   = new Blob([header + rows], { type: 'text/csv' });
+  const a      = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'DEWA_Approved_Vendors.csv';
+  a.click();
+}
+</script>
+</body>
+</html>
